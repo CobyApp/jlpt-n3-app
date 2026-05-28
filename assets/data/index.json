@@ -1,0 +1,200 @@
+{
+  "generated_at": "2026-05-28T16:03:59.000Z",
+  "exams": [
+    {
+      "id": "n3_2025-07",
+      "title": "JLPT N3 Mock Test – July 2025",
+      "file": "exams/n3_2025-07.json",
+      "questions": 73,
+      "passages": 9,
+      "source": "https://nihonez.com/jlpt-test/jlpt-n3-past-test-july-2025-real-exam/",
+      "listening_subsections": 5,
+      "listening_questions": 28
+    },
+    {
+      "id": "n3_2024-12",
+      "title": "JLPT N3 Mock Test – December 2024",
+      "file": "exams/n3_2024-12.json",
+      "questions": 73,
+      "passages": 9,
+      "source": "https://nihonez.com/jlpt-test/jlpt-n3-past-test-december-2024-real-exam/",
+      "listening_subsections": 5,
+      "listening_questions": 28
+    },
+    {
+      "id": "n3_2024-07",
+      "title": "JLPT N3 Mock Test – July 2024",
+      "file": "exams/n3_2024-07.json",
+      "questions": 73,
+      "passages": 9,
+      "source": "https://nihonez.com/jlpt-test/jlpt-n3-past-test-july-2024-real-exam/",
+      "listening_subsections": 5,
+      "listening_questions": 28
+    },
+    {
+      "id": "n3_2023-12",
+      "title": "JLPT N3 Mock Test – December 2023",
+      "file": "exams/n3_2023-12.json",
+      "questions": 73,
+      "passages": 9,
+      "source": "https://nihonez.com/jlpt-test/jlpt-n3-past-test-december-2023-real-exam/",
+      "listening_subsections": 5,
+      "listening_questions": 28
+    },
+    {
+      "id": "n3_2023-07",
+      "title": "JLPT N3 Mock Test – July 2023",
+      "file": "exams/n3_2023-07.json",
+      "questions": 73,
+      "passages": 9,
+      "source": "https://nihonez.com/jlpt-test/jlpt-n3-past-test-july-2023-real-exam/",
+      "listening_subsections": 5,
+      "listening_questions": 28
+    },
+    {
+      "id": "n3_2022-12",
+      "title": "JLPT N3 Mock Test – December 2022",
+      "file": "exams/n3_2022-12.json",
+      "questions": 73,
+      "passages": 9,
+      "source": "https://nihonez.com/jlpt-test/jlpt-n3-past-test-december-2022-real-exam/",
+      "listening_subsections": 5,
+      "listening_questions": 28
+    },
+    {
+      "id": "n3_2022-07",
+      "title": "JLPT N3 Mock Test – July 2022",
+      "file": "exams/n3_2022-07.json",
+      "questions": 72,
+      "passages": 9,
+      "source": "https://nihonez.com/jlpt-test/jlpt-n3-past-test-july-2022-real-exam/",
+      "listening_subsections": 5,
+      "listening_questions": 28
+    },
+    {
+      "id": "n3_2021-12",
+      "title": "JLPT N3 Mock Test – December 2021",
+      "file": "exams/n3_2021-12.json",
+      "questions": 73,
+      "passages": 9,
+      "source": "https://nihonez.com/jlpt-test/jlpt-n3-past-test-december-2021-real-exam/",
+      "listening_subsections": 5,
+      "listening_questions": 28
+    },
+    {
+      "id": "n3_2021-07",
+      "title": "JLPT N3 Mock Test – July 2021",
+      "file": "exams/n3_2021-07.json",
+      "questions": 73,
+      "passages": 9,
+      "source": "https://nihonez.com/jlpt-test/jlpt-n3-past-test-july-2021-real-exam/",
+      "listening_subsections": 5,
+      "listening_questions": 28
+    },
+    {
+      "id": "n3_2020-12",
+      "title": "JLPT N3 Mock Test – December 2020",
+      "file": "exams/n3_2020-12.json",
+      "questions": 73,
+      "passages": 9,
+      "source": "https://nihonez.com/jlpt-test/jlpt-n3-past-test-december-2020-real-exam/",
+      "listening_subsections": 5,
+      "listening_questions": 28
+    },
+    {
+      "id": "n3_2019-12",
+      "title": "JLPT N3 Mock Test – December 2019",
+      "file": "exams/n3_2019-12.json",
+      "questions": 74,
+      "passages": 9,
+      "source": "https://nihonez.com/jlpt-test/jlpt-n3-past-test-december-2019-real-exam/",
+      "listening_subsections": 5,
+      "listening_questions": 28
+    },
+    {
+      "id": "n3_2019-07",
+      "title": "JLPT N3 Mock Test – July 2019",
+      "file": "exams/n3_2019-07.json",
+      "questions": 74,
+      "passages": 8,
+      "source": "https://nihonez.com/jlpt-test/jlpt-n3-past-test-july-2019-real-exam/",
+      "listening_subsections": 5,
+      "listening_questions": 28
+    },
+    {
+      "id": "n3_2018-12",
+      "title": "JLPT N3 Mock Test – December 2018",
+      "file": "exams/n3_2018-12.json",
+      "questions": 74,
+      "passages": 9,
+      "source": "https://nihonez.com/jlpt-test/jlpt-n3-past-test-december-2018-real-exam/",
+      "listening_subsections": 5,
+      "listening_questions": 28
+    },
+    {
+      "id": "n3_2018-07",
+      "title": "JLPT N3 Mock Test – July 2018",
+      "file": "exams/n3_2018-07.json",
+      "questions": 74,
+      "passages": 9,
+      "source": "https://nihonez.com/jlpt-test/jlpt-n3-past-test-july-2018-real-exam/",
+      "listening_subsections": 5,
+      "listening_questions": 28
+    },
+    {
+      "id": "n3_2017-12",
+      "title": "JLPT N3 Mock Test – December 2017",
+      "file": "exams/n3_2017-12.json",
+      "questions": 72,
+      "passages": 8,
+      "source": "https://nihonez.com/jlpt-test/jlpt-n3-past-test-december-2017-real-exam/",
+      "listening_subsections": 6,
+      "listening_questions": 58
+    },
+    {
+      "id": "n3_2018-vol2",
+      "title": "JLPT N3 Mock Test – Vol 2 (2018)",
+      "file": "exams/n3_2018-vol2.json",
+      "questions": 74,
+      "passages": 7,
+      "source": "https://nihonez.com/jlpt-test/jlpt-official-practice-workbook-vol-2-published-2018-n3/",
+      "listening_subsections": 5,
+      "listening_questions": 28
+    }
+  ],
+  "vocab": {
+    "file": "vocab.json",
+    "count": 4237,
+    "source": "jamsinclair/open-anki-jlpt-decks (MIT)"
+  },
+  "kanji_n3": {
+    "file": "kanji_ko.json",
+    "count": 1592,
+    "source": "davidluzgouveia/kanji-data (MIT, jlpt_new=3)"
+  },
+  "kanji_all": {
+    "file": "kanji_ko.json",
+    "count": 1592,
+    "source": "davidluzgouveia/kanji-data (MIT)"
+  },
+  "official_pdfs": {
+    "mondai": "../jlpt_official/N3-mondai.pdf",
+    "seikai": "../jlpt_official/N3-seikai.pdf",
+    "kaitou": "../jlpt_official/N3-kaitou.pdf",
+    "source": "jlpt.jp/samples/"
+  },
+  "category_totals": {
+    "Kanji Reading": 127,
+    "Orthography": 96,
+    "Contextually-defined Expressions": 176,
+    "Paraphrases": 80,
+    "Usage": 80,
+    "Sentential Grammar 1 (Selecting grammar form)": 208,
+    "Sentential Grammar 2 (Sentence composition)": 80,
+    "Text Grammar": 70,
+    "Comprehension (Short passages)": 64,
+    "Comprehension (Mid-size passages)": 96,
+    "Comprehension (Long passages)": 64,
+    "Information Retrieval": 30
+  }
+}

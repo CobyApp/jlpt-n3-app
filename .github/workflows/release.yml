@@ -1,0 +1,186 @@
+name: Release
+
+on:
+  push:
+    branches: [release]
+  workflow_dispatch:
+
+env:
+  FLUTTER_VERSION: '3.44.0'
+  # CI 가 빌드할 때마다 단조 증가하는 build number. TestFlight / Play 가 같은
+  # number 를 두 번 받아주지 않으므로 매번 새 값이 필요. GITHUB_RUN_NUMBER 는
+  # repo 차원에서 단조 증가하므로 충돌 없음.
+  BUILD_NUMBER: ${{ github.run_number }}
+  # N2 의 App Store / Play Console 셋업 끝나면 'true' 로 바꿔 자동 업로드.
+  # 그 전까지는 .aab/.ipa 만 빌드해 Actions artifact 로 받음.
+  ENABLE_PLAY_UPLOAD: 'false'
+  ENABLE_TESTFLIGHT_UPLOAD: 'false'
+
+jobs:
+  android:
+    name: Android → Play Internal
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: Decode keystore
+        run: |
+          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 --decode > android/app/upload-keystore.jks
+
+      - name: Write key.properties
+        run: |
+          cat > android/key.properties <<EOF
+          storeFile=app/upload-keystore.jks
+          storePassword=${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          keyAlias=${{ secrets.ANDROID_KEY_ALIAS }}
+          keyPassword=${{ secrets.ANDROID_KEY_PASSWORD }}
+          EOF
+
+      - name: Flutter pub get
+        run: flutter pub get
+
+      - name: Build App Bundle (.aab)
+        run: |
+          flutter build appbundle \
+            --release \
+            --build-number=$BUILD_NUMBER
+
+      - name: Upload to Play Internal Testing
+        if: ${{ env.ENABLE_PLAY_UPLOAD == 'true' }}
+        uses: r0adkll/upload-google-play@v1
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+          packageName: com.coby.jlpt.n2
+          releaseFiles: build/app/outputs/bundle/release/app-release.aab
+          track: internal
+          status: completed
+          inAppUpdatePriority: 2
+
+      - name: Upload AAB artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-release.aab
+          path: build/app/outputs/bundle/release/app-release.aab
+          if-no-files-found: warn
+
+  ios:
+    name: iOS → TestFlight
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: Setup Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+
+      - name: Import signing certificate
+        env:
+          BUILD_CERT_BASE64: ${{ secrets.CERTIFICATE_BASE64 }}
+          BUILD_CERT_PASSWORD: ${{ secrets.CERTIFICATE_PASSWORD }}
+          KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
+        run: |
+          CERT_PATH=$RUNNER_TEMP/build_certificate.p12
+          KEYCHAIN_PATH=$RUNNER_TEMP/app-signing.keychain-db
+
+          echo -n "$BUILD_CERT_BASE64" | base64 --decode -o $CERT_PATH
+
+          security create-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
+          security set-keychain-settings -lut 21600 $KEYCHAIN_PATH
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
+
+          security import $CERT_PATH \
+            -P "$BUILD_CERT_PASSWORD" \
+            -A -t cert -f pkcs12 \
+            -k $KEYCHAIN_PATH
+
+          security set-key-partition-list \
+            -S apple-tool:,apple:,codesign: \
+            -s -k "$KEYCHAIN_PASSWORD" \
+            $KEYCHAIN_PATH
+
+          security list-keychains -d user -s $KEYCHAIN_PATH login.keychain
+
+      - name: Install provisioning profile
+        env:
+          PROVISIONING_PROFILE_BASE64: ${{ secrets.PROVISIONING_PROFILE_BASE64 }}
+        run: |
+          PROFILE_DIR=$HOME/Library/MobileDevice/Provisioning\ Profiles
+          mkdir -p "$PROFILE_DIR"
+          echo -n "$PROVISIONING_PROFILE_BASE64" | base64 --decode \
+            -o "$PROFILE_DIR/build_pp.mobileprovision"
+
+          # Profile UUID 추출 (ExportOptions.plist 에 동적으로 사용).
+          PROFILE_UUID=$(security cms -D -i "$PROFILE_DIR/build_pp.mobileprovision" \
+            | plutil -extract UUID raw -)
+          PROFILE_NAME=$(security cms -D -i "$PROFILE_DIR/build_pp.mobileprovision" \
+            | plutil -extract Name raw -)
+          echo "PROFILE_UUID=$PROFILE_UUID" >> $GITHUB_ENV
+          echo "PROFILE_NAME=$PROFILE_NAME" >> $GITHUB_ENV
+
+      - name: Substitute ExportOptions.plist
+        env:
+          IOS_TEAM_ID: ${{ secrets.IOS_TEAM_ID }}
+        run: |
+          # ${IOS_TEAM_ID} / ${IOS_PROVISIONING_PROFILE_NAME} 자리에 실값 주입
+          sed -i '' \
+            -e "s/\${IOS_TEAM_ID}/$IOS_TEAM_ID/g" \
+            -e "s/\${IOS_PROVISIONING_PROFILE_NAME}/$PROFILE_NAME/g" \
+            ios/ExportOptions.plist
+
+      - name: Flutter pub get
+        run: flutter pub get
+
+      - name: Build IPA
+        run: |
+          flutter build ipa \
+            --release \
+            --build-number=$BUILD_NUMBER \
+            --export-options-plist=ios/ExportOptions.plist
+
+      - name: Upload to TestFlight
+        if: ${{ env.ENABLE_TESTFLIGHT_UPLOAD == 'true' }}
+        env:
+          APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+          APP_STORE_CONNECT_PRIVATE_KEY: ${{ secrets.APP_STORE_CONNECT_PRIVATE_KEY }}
+        run: |
+          # API 키 파일 위치 (xcrun altool 이 자동으로 찾는 경로).
+          mkdir -p ~/.appstoreconnect/private_keys
+          echo -n "$APP_STORE_CONNECT_PRIVATE_KEY" | base64 --decode \
+            > ~/.appstoreconnect/private_keys/AuthKey_${APP_STORE_CONNECT_KEY_ID}.p8
+
+          IPA_PATH=$(ls build/ios/ipa/*.ipa | head -1)
+          echo "Uploading $IPA_PATH ..."
+
+          xcrun altool --upload-app \
+            --type ios \
+            --file "$IPA_PATH" \
+            --apiKey "$APP_STORE_CONNECT_KEY_ID" \
+            --apiIssuer "$APP_STORE_CONNECT_ISSUER_ID"
+
+      - name: Upload IPA artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-release.ipa
+          path: build/ios/ipa/*.ipa
+          if-no-files-found: warn

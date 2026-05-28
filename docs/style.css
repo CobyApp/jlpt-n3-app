@@ -1,0 +1,293 @@
+/* 엔투노트 랜딩 / 정책 페이지 공통 스타일 — 앱 톤과 같은 핑크 / 라운드 / 깔끔. */
+
+:root {
+  --pink-50: #FFF7ED;
+  --pink-100: #FFEDD5;
+  --pink-200: #FED7AA;
+  --pink-300: #FDBA74;
+  --pink-400: #FB923C;
+  --pink-500: #F97316;
+  --pink-600: #EA580C;
+  --pink-700: #9A3412;
+  --pink-800: #7C2D12;
+  --ink: #111827;
+  --ink-2: #1F2937;
+  --muted: #6B7280;
+  --border: #FFEDD5;
+  --bg: #FFFBF5;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
+    "Pretendard", "Segoe UI", Roboto, sans-serif;
+  color: var(--ink);
+  background: var(--bg);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+a { color: var(--pink-600); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* ── 헤더 ──────────────────────────────────────────── */
+.nav {
+  position: sticky;
+  top: 0;
+  background: rgba(255, 250, 251, 0.92);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  z-index: 10;
+}
+.nav-inner {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 14px 20px;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+.nav-logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 900;
+  font-size: 17px;
+  color: var(--ink);
+}
+.nav-logo img {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+}
+.nav-links {
+  margin-left: auto;
+  display: flex;
+  gap: 18px;
+}
+.nav-links a {
+  color: var(--ink-2);
+  font-size: 14px;
+  font-weight: 700;
+}
+.nav-links a:hover {
+  color: var(--pink-600);
+  text-decoration: none;
+}
+
+/* ── 히어로 ────────────────────────────────────────── */
+.hero {
+  background: linear-gradient(135deg, var(--pink-200), var(--pink-500) 60%, var(--pink-700));
+  color: white;
+  text-align: center;
+  padding: 80px 20px 100px;
+  position: relative;
+  overflow: hidden;
+}
+.hero::before, .hero::after {
+  content: "";
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(60px);
+  opacity: 0.5;
+}
+.hero::before {
+  width: 360px; height: 360px;
+  background: #FFCC99;
+  top: -100px; left: -80px;
+}
+.hero::after {
+  width: 320px; height: 320px;
+  background: #FF8C42;
+  bottom: -120px; right: -60px;
+}
+.hero-content {
+  position: relative;
+  z-index: 1;
+  max-width: 720px;
+  margin: 0 auto;
+}
+.hero-icon {
+  width: 120px;
+  height: 120px;
+  border-radius: 28px;
+  margin-bottom: 24px;
+  box-shadow: 0 18px 48px rgba(190, 24, 93, 0.35);
+}
+.hero h1 {
+  font-size: 44px;
+  font-weight: 900;
+  margin: 0 0 12px;
+  letter-spacing: -0.5px;
+  line-height: 1.15;
+}
+.hero p.sub {
+  font-size: 18px;
+  font-weight: 500;
+  opacity: 0.95;
+  margin: 0 0 36px;
+}
+.cta-row {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 22px;
+  border-radius: 14px;
+  background: white;
+  color: var(--pink-700);
+  font-weight: 800;
+  font-size: 15px;
+  box-shadow: 0 6px 16px rgba(0,0,0,0.10);
+  transition: transform 0.15s ease;
+}
+.cta:hover { transform: translateY(-2px); text-decoration: none; }
+.cta.ghost {
+  background: rgba(255,255,255,0.18);
+  color: white;
+  border: 1.5px solid rgba(255,255,255,0.55);
+  box-shadow: none;
+}
+
+/* ── 섹션 공통 ─────────────────────────────────────── */
+.section {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 80px 20px;
+}
+.section h2 {
+  font-size: 32px;
+  font-weight: 900;
+  margin: 0 0 16px;
+  letter-spacing: -0.3px;
+}
+.section .lead {
+  font-size: 16px;
+  color: var(--muted);
+  margin: 0 0 40px;
+  max-width: 640px;
+}
+
+/* ── 기능 그리드 ───────────────────────────────────── */
+.features {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+}
+.feature {
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 22px;
+  transition: transform 0.15s ease;
+}
+.feature:hover { transform: translateY(-3px); }
+.feature .emoji {
+  font-size: 28px;
+  margin-bottom: 8px;
+}
+.feature h3 {
+  font-size: 17px;
+  font-weight: 900;
+  margin: 0 0 6px;
+}
+.feature p {
+  font-size: 13.5px;
+  color: var(--ink-2);
+  line-height: 1.55;
+  margin: 0;
+}
+
+/* ── 정책/문서 페이지 ──────────────────────────────── */
+.doc {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 60px 20px 100px;
+}
+.doc h1 {
+  font-size: 30px;
+  font-weight: 900;
+  margin: 0 0 8px;
+  letter-spacing: -0.3px;
+}
+.doc .meta {
+  font-size: 13px;
+  color: var(--muted);
+  margin-bottom: 32px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--border);
+}
+.doc h2 {
+  font-size: 19px;
+  font-weight: 900;
+  margin: 40px 0 12px;
+  color: var(--pink-700);
+}
+.doc h3 {
+  font-size: 16px;
+  font-weight: 800;
+  margin: 22px 0 8px;
+}
+.doc p, .doc li {
+  font-size: 15px;
+  color: var(--ink-2);
+  line-height: 1.75;
+}
+.doc ul, .doc ol {
+  padding-left: 24px;
+  margin: 8px 0 16px;
+}
+.doc li { margin-bottom: 6px; }
+.doc code {
+  background: var(--pink-50);
+  color: var(--pink-700);
+  padding: 2px 6px;
+  border-radius: 6px;
+  font-size: 0.92em;
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+}
+.doc .callout {
+  background: var(--pink-50);
+  border: 1px solid var(--pink-100);
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin: 18px 0;
+  font-size: 14px;
+}
+
+/* ── 푸터 ──────────────────────────────────────────── */
+.footer {
+  border-top: 1px solid var(--border);
+  background: white;
+  padding: 32px 20px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--muted);
+}
+.footer .footer-links {
+  display: flex;
+  gap: 18px;
+  justify-content: center;
+  margin-bottom: 12px;
+}
+
+/* ── 모바일 ────────────────────────────────────────── */
+@media (max-width: 600px) {
+  .hero { padding: 56px 18px 72px; }
+  .hero h1 { font-size: 32px; }
+  .hero p.sub { font-size: 15px; }
+  .hero-icon { width: 96px; height: 96px; border-radius: 22px; }
+  .section { padding: 56px 18px; }
+  .section h2 { font-size: 26px; }
+  .nav-links { gap: 12px; }
+  .nav-links a { font-size: 13px; }
+}
