@@ -520,7 +520,7 @@ class _ExamPageState extends State<ExamPage> {
                           if (selectedReading.isEmpty &&
                               selectedListen.isNotEmpty) {
                             final m = selectedListen.first.order;
-                            context.push(
+                            context.go(
                                 '/exam/${exam.testId}/listen/$m');
                             return;
                           }
@@ -530,7 +530,7 @@ class _ExamPageState extends State<ExamPage> {
                           final to = selectedReading
                               .map((s) => s.to)
                               .reduce((a, b) => a > b ? a : b);
-                          context.push(
+                          context.go(
                               '/exam/${exam.testId}/q/$from?from=$from&to=$to');
                         },
                   child: const Text('시작 →'),
