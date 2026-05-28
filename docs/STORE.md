@@ -6,7 +6,7 @@ App Store Connect / Play Console 에 등록할 모든 텍스트를 한 자리에
 
 | 항목 | 값 |
 |---|---|
-| 앱 이름 | **엔쓰리노트** |
+| 앱 이름 | **엔삼노트** |
 | Bundle ID / Package | `com.coby.jlpt.n3` |
 | 카테고리 (Primary) | 교육 (Education) |
 | 카테고리 (Secondary) | 참고 (Reference) |
@@ -23,7 +23,7 @@ App Store Connect / Play Console 에 등록할 모든 텍스트를 한 자리에
 
 ### 부제목 (Subtitle, 30자)
 ```
-나만의 N3 노트, 엔쓰리노트
+나만의 N3 노트, 엔삼노트
 ```
 
 ### 프로모션 텍스트 (Promotional Text, 170자)
@@ -87,7 +87,7 @@ JLPT,N3,일본어,일본어능력시험,모의고사,청해,단어장,어휘,문
 
 ### What's New (1.0 출시 노트, 4000자)
 ```
-🎉 엔쓰리노트 첫 출시!
+🎉 엔삼노트 첫 출시!
 
 JLPT N3 학습에 필요한 모든 걸 한 앱에 담았어요.
 

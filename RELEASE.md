@@ -44,7 +44,7 @@
 https://appstoreconnect.apple.com → **My Apps → "+" → New App**
 
 - Platform: iOS
-- Name: `엔쓰리노트`
+- Name: `엔삼노트`
 - Primary Language: Korean (Korea)
 - Bundle ID: `com.coby.jlpt.n3 - JLPT N3` (목록에 보임 — API 로 이미 등록됨)
 - SKU: `JLPT-N3-001` (또는 아무 unique 값)
@@ -54,7 +54,7 @@ https://appstoreconnect.apple.com → **My Apps → "+" → New App**
 
 https://play.google.com/console → **앱 만들기**
 
-- 앱 이름: `엔쓰리노트`
+- 앱 이름: `엔삼노트`
 - 기본 언어: 한국어
 - 앱 또는 게임: 앱
 - 무료 또는 유료: 무료

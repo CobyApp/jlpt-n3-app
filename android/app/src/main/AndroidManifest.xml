@@ -1,6 +1,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <application
-        android:label="엔쓰리노트"
+        android:label="엔삼노트"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

@@ -1,4 +1,4 @@
-# 엔쓰리노트 (JLPT N3)
+# 엔삼노트 (JLPT N3)
 
 JLPT N3 학습 앱 — `jlpt-app` (N1) 의 자매 프로젝트. Flutter 골격 + 주황 테마 + N3 식별자까지 완성. **데이터 (문제/청해 mp3) 는 아직 비어있음** — `scripts/scrape-n2.py` 로 nihonez.com 에서 수집해야 함.
 
@@ -17,7 +17,7 @@ flutter run
 |---|---|
 | iOS Bundle ID | `com.coby.jlpt.n3` |
 | Android applicationId | `com.coby.jlpt.n3` |
-| 앱 이름 | 엔쓰리노트 |
+| 앱 이름 | 엔삼노트 |
 | 브랜드 컬러 | orange-500 (#F97316) |
 
 ## 디렉토리 구조
