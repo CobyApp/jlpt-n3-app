@@ -177,7 +177,6 @@ class _StudyModalState extends State<StudyModal>
                     fontSize: 22, fontWeight: FontWeight.w900)),
             const SizedBox(height: 14),
             _statRow('쉬워요', _stats.easy, const Color(0xFF15803D)),
-            _statRow('건너뜀', _stats.skip, textMuted),
             _statRow('또 보기', _stats.again, const Color(0xFFB91C1C)),
             const SizedBox(height: 22),
             FilledButton(
@@ -387,15 +386,6 @@ class _StudyModalState extends State<StudyModal>
                     _act(SrsAction.again);
                   },
                   child: const Text('또 보기'),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: OutlinedButton(
-                  onPressed: () {
-                    _act(SrsAction.skip);
-                  },
-                  child: const Text('건너뛰기'),
                 ),
               ),
               const SizedBox(width: 8),

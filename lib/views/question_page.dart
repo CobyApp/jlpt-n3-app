@@ -162,11 +162,12 @@ class _QuestionViewState extends State<_QuestionView> {
     final qs = widget.fromN != null && widget.toN != null
         ? '?from=${widget.fromN}&to=${widget.toN}'
         : '';
-    context.go('/exam/${widget.examId}/q/$n$qs');
+    // 문제 사이 이동은 스택 상단 교체(전환 애니메이션 없음).
+    context.replace('/exam/${widget.examId}/q/$n$qs');
   }
 
   void _gotoListening(Exam exam) {
-    context.go('/exam/${widget.examId}/listen/1');
+    context.replace('/exam/${widget.examId}/listen/1');
   }
 
   /// 메인 CTA 의 onPressed — 미채점이면 채점, 채점 후면 다음 이동.
@@ -180,7 +181,12 @@ class _QuestionViewState extends State<_QuestionView> {
       } else if (l.exam.listening != null) {
         _gotoListening(l.exam);
       } else {
-        context.go('/exam/${widget.examId}');
+        // 마지막 문제 → 회차로 (자연스러운 backward 트랜지션)
+        if (context.canPop()) {
+          context.pop();
+        } else {
+          context.go('/exam/${widget.examId}');
+        }
       }
     };
   }
@@ -206,8 +212,10 @@ class _QuestionViewState extends State<_QuestionView> {
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () =>
-              context.canPop() ? context.pop() : context.go('/'),
+          // pop 가능하면 자연스러운 backward 트랜지션. 아니면 회차로 fallback.
+          onPressed: () => context.canPop()
+              ? context.pop()
+              : context.go('/exam/${widget.examId}'),
         ),
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -456,7 +464,7 @@ class _QuestionViewState extends State<_QuestionView> {
       color: cardBg,
       elevation: 0,
       child: Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           color: cardBg,
           border: Border(top: BorderSide(color: cardBorder)),
         ),

@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:just_audio/just_audio.dart';
 
+import '../data/categories.dart';
 import '../data/data_loader.dart';
 import '../data/vocab_match.dart';
 import '../models/models.dart';
@@ -47,7 +48,7 @@ class _ListeningPageState extends State<ListeningPage> {
     }
     final sub = exam.listening!.subsections.firstWhere(
       (s) => s.order == widget.m,
-      orElse: () => throw Exception('問題${widget.m}을 찾을 수 없습니다.'),
+      orElse: () => throw Exception('문제 ${widget.m}을(를) 찾을 수 없습니다.'),
     );
     final vocab = await DataLoader.instance.loadVocab();
     final kanjiKo = await DataLoader.instance.loadKanjiKo();
@@ -99,12 +100,14 @@ class _ListeningViewState extends State<_ListeningView> {
   bool _showMini = false;
 
   /// `taba.asia/jlpt-audio/<examId>/<file>.mp3` →
-  /// `assets/audio/<examId>/<file>.mp3`. Bundled locally for offline.
+  /// `assets/audio/<level>/<examId>/<file>.mp3`. examId의 prefix(n1/n2/n3)에서 레벨을 끌어낸다.
   String _assetPath(String raw) {
     // Strip protocol + host if present; we only need the tail after jlpt-audio/.
     final idx = raw.indexOf('jlpt-audio/');
     final tail = idx >= 0 ? raw.substring(idx + 'jlpt-audio/'.length) : raw;
-    return 'assets/audio/$tail';
+    // tail 예: 'n1_2025-07/q1.mp3' — 첫 2글자(n1/n2/n3)가 레벨.
+    final level = tail.length >= 2 ? tail.substring(0, 2) : 'n3';
+    return 'assets/audio/$level/$tail';
   }
 
   @override
@@ -200,16 +203,18 @@ class _ListeningViewState extends State<_ListeningView> {
         appBar: AppBar(
           leading: IconButton(
             icon: const Icon(Icons.arrow_back),
-            onPressed: () =>
-                context.canPop() ? context.pop() : context.go('/'),
+            // pop 가능하면 자연스러운 backward 트랜지션. 아니면 회차로 fallback.
+            onPressed: () => context.canPop()
+                ? context.pop()
+                : context.go('/exam/${widget.load.exam.testId}'),
           ),
           title: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('問題${l.sub.order} / $total',
+              Text('문제 ${l.sub.order} / $total',
                   style: const TextStyle(
                       fontSize: 14, fontWeight: FontWeight.w700)),
-              Text('聴解 · ${l.sub.englishTitle}',
+              Text('청해 · ${listeningShortKo[l.sub.type] ?? l.sub.englishTitle}',
                   style: const TextStyle(
                       fontSize: 11, color: listeningPrimary)),
             ],
@@ -268,19 +273,22 @@ class _ListeningViewState extends State<_ListeningView> {
                   child: OutlinedButton(
                     onPressed: () {
                       if (prev != null) {
-                        context.go('/exam/${l.exam.testId}/listen/$prev');
+                        context.replace(
+                            '/exam/${l.exam.testId}/listen/$prev');
                       } else {
                         // m=1 → 마지막 reading 문제로
                         final readingTotal = l.exam.questions.length;
                         if (readingTotal > 0) {
-                          context.go(
+                          context.replace(
                               '/exam/${l.exam.testId}/q/$readingTotal');
+                        } else if (context.canPop()) {
+                          context.pop();
                         } else {
                           context.go('/exam/${l.exam.testId}');
                         }
                       }
                     },
-                    child: Text(prev != null ? '← 問題$prev' : '← 독해로'),
+                    child: Text(prev != null ? '← 문제 $prev' : '← 독해로'),
                   ),
                 ),
                 const SizedBox(width: 10),
@@ -290,12 +298,15 @@ class _ListeningViewState extends State<_ListeningView> {
                         backgroundColor: listeningPrimary),
                     onPressed: () {
                       if (next != null) {
-                        context.go('/exam/${l.exam.testId}/listen/$next');
+                        context.replace(
+                            '/exam/${l.exam.testId}/listen/$next');
+                      } else if (context.canPop()) {
+                        context.pop();
                       } else {
                         context.go('/exam/${l.exam.testId}');
                       }
                     },
-                    child: Text(next != null ? '問題$next →' : '완료 · 회차로'),
+                    child: Text(next != null ? '문제 $next →' : '완료 · 회차로'),
                   ),
                 ),
               ],
@@ -361,7 +372,7 @@ class _ListeningViewState extends State<_ListeningView> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
-                    '問題${widget.load.sub.order} · ${_fmt(pos)} / ${_fmt(dur)}',
+                    '문제 ${widget.load.sub.order} · ${_fmt(pos)} / ${_fmt(dur)}',
                     style: const TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w700,
@@ -415,11 +426,11 @@ class _ListeningViewState extends State<_ListeningView> {
             child: InkWell(
               borderRadius: BorderRadius.circular(20),
               onTap: () =>
-                  context.go('/exam/${l.exam.testId}/listen/${s.order}'),
+                  context.replace('/exam/${l.exam.testId}/listen/${s.order}'),
               child: Padding(
                 padding: const EdgeInsets.symmetric(
                     horizontal: 14, vertical: 8),
-                child: Text('問題${s.order}',
+                child: Text('문제 ${s.order}',
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w800,
@@ -471,7 +482,7 @@ class _ListeningViewState extends State<_ListeningView> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      '問題${widget.load.sub.order} · ${widget.load.sub.englishTitle}',
+                      '문제 ${widget.load.sub.order} · ${listeningShortKo[widget.load.sub.type] ?? widget.load.sub.englishTitle}',
                       style: const TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w800,
@@ -679,7 +690,7 @@ class _ListeningViewState extends State<_ListeningView> {
               )),
           if (scriptPlain.isNotEmpty) ...[
             const SizedBox(height: 8),
-            const Text('音声スクリプト',
+            const Text('음성 스크립트',
                 style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w700,

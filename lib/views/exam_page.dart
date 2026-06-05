@@ -20,6 +20,56 @@ class _Section {
   int get count => to - from + 1;
 }
 
+/// 우측 진행도 다이얼 — 작은 원형 ring + 가운데 "n/N" (또는 ✓).
+class _ProgressDial extends StatelessWidget {
+  final int answered;
+  final int total;
+  final Color color;
+  final bool done;
+  const _ProgressDial({
+    required this.answered,
+    required this.total,
+    required this.color,
+    required this.done,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final value = total == 0 ? 0.0 : answered / total;
+    return SizedBox(
+      width: 44,
+      height: 44,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          SizedBox(
+            width: 44,
+            height: 44,
+            child: CircularProgressIndicator(
+              value: value,
+              strokeWidth: 4,
+              backgroundColor: const Color(0xFFEFEFEF),
+              valueColor: AlwaysStoppedAnimation<Color>(done ? ok : color),
+            ),
+          ),
+          if (done)
+            Icon(Icons.check_rounded, color: ok, size: 22)
+          else
+            Text(
+              '$answered/$total',
+              style: const TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.w900,
+                color: ink,
+                height: 1.0,
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
 class ExamPage extends StatefulWidget {
   final String examId;
   const ExamPage({super.key, required this.examId});
@@ -139,7 +189,7 @@ class _ExamPageState extends State<ExamPage> {
                             horizontal: 6, vertical: 4),
                         child: Text(
                           _selected.isEmpty ? '전체 선택' : '선택 해제',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w800,
                             color: brandPrimary,
@@ -181,7 +231,7 @@ class _ExamPageState extends State<ExamPage> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          _isCategoryDrill ? exam.title : 'JLPT N3 · ${shortTitle(exam.title)}',
+          _isCategoryDrill ? exam.title : 'JLPT · ${shortTitle(exam.title)}',
           style: const TextStyle(
             fontSize: 22,
             fontWeight: FontWeight.w900,
@@ -240,14 +290,22 @@ class _ExamPageState extends State<ExamPage> {
             final label = _isCategoryDrill
                 ? s.key
                 : categoryKo(s.key);
+            // 진행도: 이 섹션 범위(s.from~s.to)에서 풀린 문제 수.
+            final prog = Store.instance.getProgress(exam.testId);
+            int answered = 0;
+            for (var n = s.from; n <= s.to; n++) {
+              if (prog.containsKey(n)) answered++;
+            }
             return Padding(
               padding: const EdgeInsets.only(bottom: 8),
               child: _sectionTile(
                 number: _isCategoryDrill
                     ? '회차 ${s.idx + 1}'
-                    : '問題${s.idx + 1}',
+                    : '문제 ${s.idx + 1}',
                 label: label,
                 meta: '${s.from}–${s.to} · ${s.count}문제',
+                answered: answered,
+                total: s.count,
                 selected: selected,
                 isListen: false,
                 onTap: () => setState(() {
@@ -304,10 +362,11 @@ class _ExamPageState extends State<ExamPage> {
           return Padding(
             padding: const EdgeInsets.only(bottom: 8),
             child: _sectionTile(
-              number: '問題${sub.order}',
+              number: '문제 ${sub.order}',
               label: ko,
-              meta:
-                  '🔊 音声 · ${answered > 0 ? '$answered/${sub.questions.length}문제' : '${sub.questions.length}문제'}',
+              meta: '🔊 음성 · ${sub.questions.length}문제',
+              answered: answered,
+              total: sub.questions.length,
               selected: selected,
               isListen: true,
               onTap: () => setState(() {
@@ -328,11 +387,14 @@ class _ExamPageState extends State<ExamPage> {
     required String number,
     required String label,
     required String meta,
+    required int answered,
+    required int total,
     required bool selected,
     required bool isListen,
     required VoidCallback onTap,
   }) {
     final accent = isListen ? listeningPrimary : accentPrimary;
+    final done = total > 0 && answered == total;
     // 선택/미선택에 따라 사이즈가 미세하게 밀리지 않도록 보더 굵기 / 슬롯을
     // 모두 고정. 색만 바뀐다.
     return Material(
@@ -371,9 +433,11 @@ class _ExamPageState extends State<ExamPage> {
                 ),
               ),
               const SizedBox(width: 10),
+              // 라벨 + 메타 — 가용 폭 모두 차지
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
                       label,
@@ -381,6 +445,8 @@ class _ExamPageState extends State<ExamPage> {
                         fontSize: 14,
                         fontWeight: FontWeight.w700,
                       ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 2),
                     Text(meta,
@@ -389,6 +455,15 @@ class _ExamPageState extends State<ExamPage> {
                   ],
                 ),
               ),
+              // 우측: 진행도 표시 — 진행률 링 + "n/N" 라벨 (또는 "완료")
+              const SizedBox(width: 8),
+              if (total > 0)
+                _ProgressDial(
+                  answered: answered,
+                  total: total,
+                  color: accent,
+                  done: done,
+                ),
             ],
           ),
         ),
@@ -425,18 +500,18 @@ class _ExamPageState extends State<ExamPage> {
           final s = selectedReading.first;
           label = _isCategoryDrill
               ? s.key
-              : '問題${s.idx + 1} ${categoryKo(s.key)}';
+              : '문제 ${s.idx + 1} · ${categoryKo(s.key)}';
           range = '${s.from}–${s.to} · ${s.count}문제';
         } else {
           final m = selectedListen.first;
-          label = '청해 問題${m.order} ${listeningShortKo[m.type] ?? ''}'.trim();
+          label = '청해 문제 ${m.order} · ${listeningShortKo[m.type] ?? ''}'.trim();
           range = '${m.questions.length}문제 (청해)';
         }
       } else {
         label = '$total개 영역 선택';
         final tags = [
           ...selectedReading.map((s) =>
-              _isCategoryDrill ? s.key : '問題${s.idx + 1}'),
+              _isCategoryDrill ? s.key : '문제 ${s.idx + 1}'),
           ...selectedListen.map((m) => '청해${m.order}'),
         ].join(', ');
         range = '$tags · $selCount문제';
@@ -448,7 +523,7 @@ class _ExamPageState extends State<ExamPage> {
       color: Colors.white,
       elevation: 0,
       child: Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           color: Colors.white,
           border: Border(top: BorderSide(color: cardBorder)),
         ),
@@ -517,10 +592,13 @@ class _ExamPageState extends State<ExamPage> {
                   onPressed: !hasSelection
                       ? null
                       : () {
+                          // push 로 진입 → 자연스러운 forward 트랜지션.
+                          // 문제 사이 이동은 context.replace 로 무전환.
+                          // 뒤로가기는 pop() → 자연스러운 backward 트랜지션으로 회차로 복귀.
                           if (selectedReading.isEmpty &&
                               selectedListen.isNotEmpty) {
                             final m = selectedListen.first.order;
-                            context.go(
+                            context.push(
                                 '/exam/${exam.testId}/listen/$m');
                             return;
                           }
@@ -530,7 +608,7 @@ class _ExamPageState extends State<ExamPage> {
                           final to = selectedReading
                               .map((s) => s.to)
                               .reduce((a, b) => a > b ? a : b);
-                          context.go(
+                          context.push(
                               '/exam/${exam.testId}/q/$from?from=$from&to=$to');
                         },
                   child: const Text('시작 →'),

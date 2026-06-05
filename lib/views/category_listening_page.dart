@@ -116,7 +116,7 @@ class _CategoryListeningPageState extends State<CategoryListeningPage> {
               ),
               const SizedBox(height: 6),
               Text(
-                '11회차에서 같은 유형의 청해 mondai를 모아서 풀어보세요. ${entries.length}회차 · $totalQ문제${answered > 0 ? ' · 정답률 $accuracy%' : ''}',
+                '여러 회차의 같은 유형 청해 문제를 모아서 풀어보세요. ${entries.length}회차 · $totalQ문제${answered > 0 ? ' · 정답률 $accuracy%' : ''}',
                 style: const TextStyle(fontSize: 13, color: textMuted, height: 1.4),
               ),
               const SizedBox(height: 18),
@@ -159,7 +159,7 @@ class _CategoryListeningPageState extends State<CategoryListeningPage> {
                                     borderRadius: BorderRadius.circular(8),
                                   ),
                                   child: Text(
-                                    '청해 問題${e.sub.order}',
+                                    '청해 · 문제 ${e.sub.order}',
                                     style: const TextStyle(
                                       fontSize: 10,
                                       fontWeight: FontWeight.w700,

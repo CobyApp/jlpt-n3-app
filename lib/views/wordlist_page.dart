@@ -28,6 +28,7 @@ class _WordlistPageState extends State<WordlistPage> {
   final Set<String> _active = {};
   _SortKey _sort = _SortKey.freq;
   Map<String, List<String>> _kanjiKo = const {};
+  static final _kanjiRe = RegExp(r'[一-龯々ヶ]');
 
   @override
   void initState() {
@@ -208,7 +209,7 @@ class _WordlistPageState extends State<WordlistPage> {
                 final key = 'listen:${sub.order}';
                 final active = _active.contains(key);
                 final label =
-                    '청해 ${listeningShortKo[sub.type] ?? '問題${sub.order}'}';
+                    '청해 ${listeningShortKo[sub.type] ?? '문제 ${sub.order}'}';
                 return _tab(key, label, active, () {
                   setState(() {
                     if (active) {
@@ -328,6 +329,14 @@ class _WordlistPageState extends State<WordlistPage> {
 
   Widget _wordCard(VocabEntry e, int freq) {
     final saved = Store.instance.isInWordbook(e.w);
+    // 한자별 한글 음/뜻 모음 — wordbook 화면과 동일 포맷.
+    final hanjas = <(String, String, String)>[];
+    for (final ch in e.w.split('')) {
+      if (!_kanjiRe.hasMatch(ch)) continue;
+      final v = _kanjiKo[ch];
+      if (v == null) continue;
+      hanjas.add((ch, v.isNotEmpty ? v[0] : '', v.length > 1 ? v[1] : ''));
+    }
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -371,9 +380,31 @@ class _WordlistPageState extends State<WordlistPage> {
               overflow: TextOverflow.ellipsis,
             ),
           ),
-          const SizedBox(height: 6),
-          Text('$freq개 문제 등장',
-              style: const TextStyle(fontSize: 11, color: textMuted)),
+          if (hanjas.isNotEmpty) ...[
+            const SizedBox(height: 6),
+            Wrap(
+              spacing: 4,
+              runSpacing: 4,
+              children: hanjas.map((h) {
+                // h.$1 = 한자, h.$2 = 음, h.$3 = 뜻
+                final hasMeaning = h.$3.isNotEmpty;
+                final label = hasMeaning
+                    ? '${h.$1} ${h.$3} ${h.$2}'
+                    : '${h.$1} ${h.$2}';
+                return Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF3F4F6),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(label,
+                      style: const TextStyle(
+                          fontSize: 11, color: Color(0xFF1D4ED8))),
+                );
+              }).toList(),
+            ),
+          ],
         ],
       ),
     );

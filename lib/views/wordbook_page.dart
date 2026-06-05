@@ -265,18 +265,25 @@ class _WordbookPageState extends State<WordbookPage> {
               spacing: 4,
               runSpacing: 4,
               children: hanjas
-                  .map((h) => Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFF3F4F6),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Text('${h.$1} ${h.$2}',
-                            style: const TextStyle(
-                                fontSize: 11,
-                                color: Color(0xFF1D4ED8))),
-                      ))
+                  .map((h) {
+                    // h.$1 = 한자, h.$2 = 음(sino-Korean), h.$3 = 뜻(Korean meaning)
+                    final hasMeaning = h.$3.isNotEmpty;
+                    final label = hasMeaning
+                        ? '${h.$1} ${h.$3} ${h.$2}'
+                        : '${h.$1} ${h.$2}';
+                    return Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF3F4F6),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(label,
+                          style: const TextStyle(
+                              fontSize: 11,
+                              color: Color(0xFF1D4ED8))),
+                    );
+                  })
                   .toList(),
             ),
           ],

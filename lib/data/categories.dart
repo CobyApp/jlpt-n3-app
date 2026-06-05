@@ -1,4 +1,4 @@
-/// JLPT N3 영역 카테고리 정의 + 한국어 라벨. src/lib/categories.ts와 동기화.
+/// JLPT 영역 카테고리 정의 + 한국어 라벨. src/lib/categories.ts와 동기화.
 library;
 
 enum CategoryGroup { vocab, grammar, reading, listening }
@@ -24,9 +24,12 @@ class CategoryDef {
   });
 }
 
+/// N1/N2/N3 카테고리의 합집합. 실제 화면 노출 여부는 현재 레벨 exams에서 문제 수를
+/// 카운트해 0이면 숨기는 방식으로 처리한다.
 const List<CategoryDef> allCategories = [
   CategoryDef(slug: 'kanji-reading', category: 'Kanji Reading', group: CategoryGroup.vocab),
   CategoryDef(slug: 'orthography', category: 'Orthography', group: CategoryGroup.vocab),
+  CategoryDef(slug: 'word-formation', category: 'Word Formation', group: CategoryGroup.vocab),
   CategoryDef(slug: 'contextual', category: 'Contextually-defined Expressions', group: CategoryGroup.vocab),
   CategoryDef(slug: 'paraphrases', category: 'Paraphrases', group: CategoryGroup.vocab),
   CategoryDef(slug: 'usage', category: 'Usage', group: CategoryGroup.vocab),
@@ -36,12 +39,15 @@ const List<CategoryDef> allCategories = [
   CategoryDef(slug: 'short-passage', category: 'Comprehension (Short passages)', group: CategoryGroup.reading),
   CategoryDef(slug: 'mid-passage', category: 'Comprehension (Mid-size passages)', group: CategoryGroup.reading),
   CategoryDef(slug: 'long-passage', category: 'Comprehension (Long passages)', group: CategoryGroup.reading),
+  CategoryDef(slug: 'integrated', category: 'Integrated Comprehension', group: CategoryGroup.reading),
+  CategoryDef(slug: 'thematic', category: 'Thematic Comprehension', group: CategoryGroup.reading),
   CategoryDef(slug: 'info-retrieval', category: 'Information Retrieval', group: CategoryGroup.reading),
   CategoryDef(slug: 'listen-task', category: 'task-based-comprehension', group: CategoryGroup.listening),
   CategoryDef(slug: 'listen-key', category: 'comprehension-of-key-points', group: CategoryGroup.listening),
   CategoryDef(slug: 'listen-outline', category: 'comprehension-general-outline', group: CategoryGroup.listening),
   CategoryDef(slug: 'listen-verbal', category: 'verbal-expressions', group: CategoryGroup.listening),
   CategoryDef(slug: 'listen-quick', category: 'quick-response', group: CategoryGroup.listening),
+  CategoryDef(slug: 'listen-integrated', category: 'listening-integrated-comprehension', group: CategoryGroup.listening),
 ];
 
 /// 청해 슬러그 (cat:listen-* 라우팅에 사용)
@@ -51,11 +57,13 @@ const Set<String> listeningSlugs = {
   'listen-outline',
   'listen-verbal',
   'listen-quick',
+  'listen-integrated',
 };
 
 const Map<String, String> _koLabels = {
   'Kanji Reading': '한자 읽기',
   'Orthography': '표기',
+  'Word Formation': '단어 형성',
   'Contextually-defined Expressions': '문맥 규정',
   'Paraphrases': '유의 표현',
   'Usage': '용법',
@@ -63,14 +71,17 @@ const Map<String, String> _koLabels = {
   'Sentential Grammar 2 (Sentence composition)': '문장 만들기',
   'Text Grammar': '글의 문법',
   'Comprehension (Short passages)': '단문 독해',
-  'Comprehension (Mid-size passages)': '중간 길이 독해',
+  'Comprehension (Mid-size passages)': '중문 독해',
   'Comprehension (Long passages)': '장문 독해',
+  'Integrated Comprehension': '통합 이해',
+  'Thematic Comprehension': '주장 이해',
   'Information Retrieval': '정보 검색',
   'task-based-comprehension': '청해 — 과제 이해',
   'comprehension-of-key-points': '청해 — 포인트 이해',
   'comprehension-general-outline': '청해 — 개요 이해',
   'verbal-expressions': '청해 — 발화 표현',
   'quick-response': '청해 — 즉시 응답',
+  'listening-integrated-comprehension': '청해 — 통합 이해',
 };
 
 const Map<String, String> listeningShortKo = {
@@ -79,6 +90,7 @@ const Map<String, String> listeningShortKo = {
   'comprehension-general-outline': '개요 이해',
   'verbal-expressions': '발화 표현',
   'quick-response': '즉시 응답',
+  'listening-integrated-comprehension': '통합 이해',
 };
 
 String categoryKo(String en) => _koLabels[en] ?? en;
@@ -112,10 +124,10 @@ String? listeningTypeFromSlug(String slug) {
 }
 
 String sectionLabelKo(int num, String category) =>
-    '問題$num ${categoryKo(category)}';
+    '문제 $num · ${categoryKo(category)}';
 
 /// 회차별 인덱스 카드에서 보이는 짧은 제목 — 한국어 형식.
-/// 예) "JLPT N3 Mock Test – July 2025" → "2025년 7월"
+/// 예) "JLPT Mock Test – July 2025" → "2025년 7월"
 ///     "JLPT Practice Workbook 2018 Volume 2" → "워크북 2018-2"
 String shortTitle(String title) {
   // 1) "Month YYYY" 패턴 → "YYYY년 M월"
