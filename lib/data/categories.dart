@@ -156,13 +156,13 @@ String shortTitle(String title) {
     final yr = m.group(2)!;
     return '$yr년 $mo월';
   }
-  // 2) Practice Workbook 패턴 → "워크북 2018-2"
+  // 2) Practice Workbook 패턴 → "YYYY년" (예: 2018년)
   final wb = RegExp(
-    r'JLPT\s*Practice\s*Workbook\s*(\d{4})\s*(?:Volume|Vol)\s*(\d+)',
+    r'JLPT\s*Practice\s*Workbook\s*(\d{4})',
     caseSensitive: false,
   ).firstMatch(title);
   if (wb != null) {
-    return '워크북 ${wb.group(1)}-${wb.group(2)}';
+    return '${wb.group(1)}년';
   }
   // 3) Fallback — Mock Test prefix 만 제거
   return title
