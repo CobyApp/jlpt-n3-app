@@ -463,8 +463,24 @@ class _QuestionViewState extends State<_QuestionView> {
       );
     }
 
-    if (compact && l.q.opts.length == 4) {
-      // 2x2 그리드
+    final n = l.q.opts.length;
+
+    // ≤ 2자 (숫자만 등): 한 줄에 모두
+    if (maxLen <= 2 && n >= 2 && n <= 4) {
+      return Row(
+        children: List.generate(n, (i) {
+          return Expanded(
+            child: Padding(
+              padding: EdgeInsets.only(right: i < n - 1 ? 8 : 0),
+              child: tile(i, dense: true),
+            ),
+          );
+        }),
+      );
+    }
+
+    // ≤ 8자 + 4개: 2x2 그리드
+    if (compact && n == 4) {
       return Column(
         children: [
           Row(children: [
@@ -483,7 +499,7 @@ class _QuestionViewState extends State<_QuestionView> {
     }
 
     return Column(
-      children: List.generate(l.q.opts.length, (i) {
+      children: List.generate(n, (i) {
         return Padding(
           padding: const EdgeInsets.only(bottom: 10),
           child: tile(i),

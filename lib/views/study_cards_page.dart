@@ -26,15 +26,12 @@ class _StudyCardsPageState extends State<StudyCardsPage> {
   String _level = '';
   final PageController _pc = PageController();
   int _idx = 0;
-  bool _shuffled = false;
-  late List<int> _order;
 
   @override
   void initState() {
     super.initState();
     _level = 'n3';
     _f = _load(_level);
-    _order = [];
   }
 
   Future<_Bundle> _load(String lv) async {
@@ -60,30 +57,7 @@ class _StudyCardsPageState extends State<StudyCardsPage> {
         cards.add(_Card.fromGrammar(g));
       }
     }
-    if (_order.length != cards.length) {
-      _order = List.generate(cards.length, (i) => i);
-    }
     return _Bundle(cards: cards, kanjiKo: kk);
-  }
-
-  void _shuffle(int n) {
-    final list = List.generate(n, (i) => i);
-    list.shuffle(Random());
-    setState(() {
-      _order = list;
-      _shuffled = true;
-      _idx = 0;
-    });
-    _pc.jumpToPage(0);
-  }
-
-  void _reset(int n) {
-    setState(() {
-      _order = List.generate(n, (i) => i);
-      _shuffled = false;
-      _idx = 0;
-    });
-    _pc.jumpToPage(0);
   }
 
   @override
@@ -153,9 +127,8 @@ class _StudyCardsPageState extends State<StudyCardsPage> {
                   itemCount: total,
                   onPageChanged: (i) => setState(() => _idx = i),
                   itemBuilder: (c, i) {
-                    final idx = _order[i];
                     return _FlipCard(
-                      card: b.cards[idx],
+                      card: b.cards[i],
                       lang: lang,
                       kanjiKo: b.kanjiKo,
                     );
@@ -167,53 +140,29 @@ class _StudyCardsPageState extends State<StudyCardsPage> {
                     20, 4, 20, 16 + MediaQuery.of(context).viewPadding.bottom),
                 child: Row(
                   children: [
-                    _navBtn(
-                      icon: Icons.arrow_back_rounded,
-                      onTap: _idx > 0
-                          ? () => _pc.previousPage(
-                              duration: const Duration(milliseconds: 220),
-                              curve: Curves.easeOut)
-                          : null,
-                    ),
-                    const SizedBox(width: 12),
                     Expanded(
-                      child: ElevatedButton(
-                        onPressed: () => _shuffled ? _reset(total) : _shuffle(total),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor:
-                              brandPrimary.withValues(alpha: 0.1),
-                          foregroundColor: brandPrimary,
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(_shuffled ? Icons.sort_rounded : Icons.shuffle_rounded,
-                                size: 18),
-                            const SizedBox(width: 6),
-                            Text(
-                              _shuffled
-                                  ? t('cards.reset')
-                                  : t('cards.shuffle'),
-                              style: const TextStyle(
-                                  fontSize: 13.5, fontWeight: FontWeight.w800),
-                            ),
-                          ],
-                        ),
+                      child: _bigNavBtn(
+                        icon: Icons.arrow_back_rounded,
+                        label: t('cards.prev'),
+                        onTap: _idx > 0
+                            ? () => _pc.previousPage(
+                                duration: const Duration(milliseconds: 220),
+                                curve: Curves.easeOut)
+                            : null,
                       ),
                     ),
                     const SizedBox(width: 12),
-                    _navBtn(
-                      icon: Icons.arrow_forward_rounded,
-                      onTap: _idx < total - 1
-                          ? () => _pc.nextPage(
-                              duration: const Duration(milliseconds: 220),
-                              curve: Curves.easeOut)
-                          : null,
+                    Expanded(
+                      child: _bigNavBtn(
+                        icon: Icons.arrow_forward_rounded,
+                        label: t('cards.next'),
+                        onTap: _idx < total - 1
+                            ? () => _pc.nextPage(
+                                duration: const Duration(milliseconds: 220),
+                                curve: Curves.easeOut)
+                            : null,
+                        primary: true,
+                      ),
                     ),
                   ],
                 ),
@@ -225,29 +174,49 @@ class _StudyCardsPageState extends State<StudyCardsPage> {
     );
   }
 
-  Widget _navBtn({required IconData icon, VoidCallback? onTap}) {
+  Widget _bigNavBtn({
+    required IconData icon,
+    required String label,
+    required VoidCallback? onTap,
+    bool primary = false,
+  }) {
     final enabled = onTap != null;
+    final bgEnabled =
+        primary ? brandPrimary : brandPrimary.withValues(alpha: 0.10);
+    final fgEnabled = primary ? Colors.white : brandPrimary;
+    final disabledBg = const Color(0xFFEDEDED);
+    final disabledFg = const Color(0xFFB0B0B0);
     return Material(
-      color: enabled
-          ? Colors.white
-          : Colors.white.withValues(alpha: 0.4),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(
-          color: brandPrimary.withValues(alpha: enabled ? 0.25 : 0.1),
-        ),
-      ),
+      color: enabled ? bgEnabled : disabledBg,
+      borderRadius: BorderRadius.circular(14),
       child: InkWell(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(14),
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Icon(
-            icon,
-            color: enabled
-                ? brandPrimary
-                : brandPrimary.withValues(alpha: 0.3),
-            size: 20,
+          padding: const EdgeInsets.symmetric(vertical: 14),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              if (icon == Icons.arrow_back_rounded) ...[
+                Icon(icon, size: 20, color: enabled ? fgEnabled : disabledFg),
+                const SizedBox(width: 6),
+                Text(label,
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w900,
+                      color: enabled ? fgEnabled : disabledFg,
+                    )),
+              ] else ...[
+                Text(label,
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w900,
+                      color: enabled ? fgEnabled : disabledFg,
+                    )),
+                const SizedBox(width: 6),
+                Icon(icon, size: 20, color: enabled ? fgEnabled : disabledFg),
+              ],
+            ],
           ),
         ),
       ),

@@ -8,6 +8,7 @@ import 'package:just_audio/just_audio.dart';
 import '../data/categories.dart';
 import '../data/data_loader.dart';
 import '../data/vocab_match.dart';
+import '../l10n/strings.dart';
 import '../models/models.dart';
 import '../state/store.dart';
 import '../theme.dart';
@@ -44,11 +45,12 @@ class _ListeningPageState extends State<ListeningPage> {
   Future<_Load> _load() async {
     final exam = await DataLoader.instance.loadExam(widget.examId);
     if (exam.listening == null) {
-      throw Exception('청해 데이터가 없습니다.');
+      throw Exception(t('l.no_listening_data'));
     }
     final sub = exam.listening!.subsections.firstWhere(
       (s) => s.order == widget.m,
-      orElse: () => throw Exception('문제 ${widget.m}을(를) 찾을 수 없습니다.'),
+      orElse: () =>
+          throw Exception(tx('l.problem_not_found', {'n': widget.m})),
     );
     final vocab = await DataLoader.instance.loadVocab();
     final kanjiKo = await DataLoader.instance.loadKanjiKo();
@@ -211,10 +213,11 @@ class _ListeningViewState extends State<_ListeningView> {
           title: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('문제 ${l.sub.order} / $total',
+              Text(tx('l.problem_of_total', {'m': l.sub.order, 'total': total}),
                   style: const TextStyle(
                       fontSize: 14, fontWeight: FontWeight.w700)),
-              Text('청해 · ${listeningShortKo[l.sub.type] ?? l.sub.englishTitle}',
+              Text(
+                  '${t('exam.group_listening')} · ${listeningShort(l.sub.type)}',
                   style: const TextStyle(
                       fontSize: 11, color: listeningPrimary)),
             ],
@@ -227,7 +230,7 @@ class _ListeningViewState extends State<_ListeningView> {
                     .copyWith(furigana: !furi));
                 if (mounted) setState(() {});
               },
-              child: Text('후리가나 ${furi ? 'ON' : 'OFF'}',
+              child: Text(furi ? t('l.furigana_on') : t('l.furigana_off'),
                   style: TextStyle(
                     color: furi ? listeningPrimary : textMuted,
                     fontWeight: FontWeight.w700,
@@ -288,7 +291,9 @@ class _ListeningViewState extends State<_ListeningView> {
                         }
                       }
                     },
-                    child: Text(prev != null ? '← 문제 $prev' : '← 독해로'),
+                    child: Text(prev != null
+                        ? tx('l.prev_problem', {'n': prev})
+                        : t('l.back_to_reading')),
                   ),
                 ),
                 const SizedBox(width: 10),
@@ -306,7 +311,9 @@ class _ListeningViewState extends State<_ListeningView> {
                         context.go('/exam/${l.exam.testId}');
                       }
                     },
-                    child: Text(next != null ? '문제 $next →' : '완료 · 회차로'),
+                    child: Text(next != null
+                        ? tx('l.next_problem', {'n': next})
+                        : t('l.complete_to_round')),
                   ),
                 ),
               ],
@@ -401,7 +408,7 @@ class _ListeningViewState extends State<_ListeningView> {
               },
               icon: const Icon(Icons.unfold_more, size: 18),
               color: textMuted,
-              tooltip: '오디오 카드로 이동',
+              tooltip: t('l.go_to_audio_card'),
             ),
           ],
         ),
@@ -430,7 +437,7 @@ class _ListeningViewState extends State<_ListeningView> {
               child: Padding(
                 padding: const EdgeInsets.symmetric(
                     horizontal: 14, vertical: 8),
-                child: Text('문제 ${s.order}',
+                child: Text(tx('l.problem_n', {'n': s.order}),
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w800,
@@ -570,82 +577,12 @@ class _ListeningViewState extends State<_ListeningView> {
                     )),
               ),
               const SizedBox(width: 8),
-              Text('선택지 $count개 — 음성을 듣고 고르세요',
+              Text(tx('l.choices_meta', {'n': count}),
                   style: const TextStyle(fontSize: 11, color: textMuted)),
             ],
           ),
           const SizedBox(height: 10),
-          ...List.generate(count, (i) {
-            final isPicked = i == picked;
-            final isCorrect = graded && i == q.correct;
-            final isWrong = graded && i == picked && i != q.correct;
-            Color bg = Colors.white;
-            Color border = cardBorder;
-            Color fg = const Color(0xFF111827);
-            if (isCorrect) {
-              bg = const Color(0xFFDCFCE7);
-              border = const Color(0xFF15803D);
-            } else if (isWrong) {
-              bg = const Color(0xFFFEE2E2);
-              border = const Color(0xFFB91C1C);
-            } else if (isPicked) {
-              bg = listeningPale;
-              border = listeningPrimary;
-              fg = listeningPrimary;
-            }
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: Material(
-                color: bg,
-                borderRadius: BorderRadius.circular(12),
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(12),
-                  onTap: graded ? null : () => _select(q.id, i),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(12),
-                      // 보더 굵기 고정 — 선택 유무로 카드 사이즈가 밀리지 않게.
-                      border: Border.all(color: border, width: 1.5),
-                    ),
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 12, vertical: 12),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('${i + 1}.',
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w800,
-                              color: fg,
-                            )),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: JapaneseText(
-                            text: q.opts[i],
-                            index: widget.load.idx,
-                            furigana: furi,
-                            baseStyle: TextStyle(
-                              fontSize: 14,
-                              height: 1.45,
-                              color: fg,
-                              fontWeight: isPicked
-                                  ? FontWeight.w700
-                                  : FontWeight.w500,
-                            ),
-                            onWordTap: (e) => VocabSheet.show(
-                              context,
-                              entry: e,
-                              kanjiKo: widget.load.kanjiKo,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            );
-          }),
+          _buildListenOptions(q, count, picked, graded, furi),
           const SizedBox(height: 6),
           SizedBox(
             width: double.infinity,
@@ -655,7 +592,7 @@ class _ListeningViewState extends State<_ListeningView> {
                 backgroundColor: listeningPrimary,
                 disabledBackgroundColor: const Color(0xFFCBD5E1),
               ),
-              child: Text(graded ? '확인됨' : '정답 확인'),
+              child: Text(graded ? t('q.checked') : t('q.check_answer')),
             ),
           ),
           if (graded) ...[
@@ -664,6 +601,142 @@ class _ListeningViewState extends State<_ListeningView> {
           ],
         ],
       ),
+    );
+  }
+
+  /// 옵션 길이별 적응형 레이아웃 — 숫자만/짧은 텍스트/긴 텍스트.
+  Widget _buildListenOptions(
+      ListeningQuestion q, int count, int picked, bool graded, bool furi) {
+    final plains = List.generate(
+        count,
+        (i) =>
+            q.opts[i].replaceAll(RegExp(r'<[^>]+>'), '').trim());
+    final maxLen = plains.fold<int>(0, (m, s) => s.length > m ? s.length : m);
+
+    Widget tile(int i, {bool dense = false}) {
+      final isPicked = i == picked;
+      final isCorrect = graded && i == q.correct;
+      final isWrong = graded && i == picked && i != q.correct;
+      Color bg = Colors.white;
+      Color border = cardBorder;
+      Color fg = const Color(0xFF111827);
+      if (isCorrect) {
+        bg = const Color(0xFFDCFCE7);
+        border = const Color(0xFF15803D);
+      } else if (isWrong) {
+        bg = const Color(0xFFFEE2E2);
+        border = const Color(0xFFB91C1C);
+      } else if (isPicked) {
+        bg = listeningPale;
+        border = listeningPrimary;
+        fg = listeningPrimary;
+      }
+      // 숫자만 옵션이면 가운데 정렬 + 라벨만 크게
+      final numeric = maxLen <= 2;
+      return Material(
+        color: bg,
+        borderRadius: BorderRadius.circular(12),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(12),
+          onTap: graded ? null : () => _select(q.id, i),
+          child: Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: border, width: 1.5),
+            ),
+            padding: EdgeInsets.symmetric(
+                horizontal: dense ? 10 : 12,
+                vertical: numeric ? 16 : (dense ? 12 : 12)),
+            child: numeric
+                ? Center(
+                    child: Text(
+                      '${i + 1}',
+                      style: TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w900,
+                        color: fg,
+                      ),
+                    ),
+                  )
+                : Row(
+                    crossAxisAlignment: dense
+                        ? CrossAxisAlignment.center
+                        : CrossAxisAlignment.start,
+                    children: [
+                      Text('${i + 1}.',
+                          style: TextStyle(
+                            fontSize: dense ? 13 : 14,
+                            fontWeight: FontWeight.w800,
+                            color: fg,
+                          )),
+                      SizedBox(width: dense ? 6 : 8),
+                      Expanded(
+                        child: JapaneseText(
+                          text: q.opts[i],
+                          index: widget.load.idx,
+                          furigana: furi,
+                          baseStyle: TextStyle(
+                            fontSize: dense ? 13.5 : 14,
+                            height: 1.4,
+                            color: fg,
+                            fontWeight: isPicked
+                                ? FontWeight.w700
+                                : FontWeight.w500,
+                          ),
+                          onWordTap: (e) => VocabSheet.show(
+                            context,
+                            entry: e,
+                            kanjiKo: widget.load.kanjiKo,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+          ),
+        ),
+      );
+    }
+
+    // ≤ 2자 (숫자): 한 줄에 모두
+    if (maxLen <= 2 && count >= 2 && count <= 4) {
+      return Row(
+        children: List.generate(count, (i) {
+          return Expanded(
+            child: Padding(
+              padding: EdgeInsets.only(right: i < count - 1 ? 8 : 0),
+              child: tile(i, dense: true),
+            ),
+          );
+        }),
+      );
+    }
+
+    // ≤ 8자 + 4개: 2x2
+    if (maxLen <= 8 && count == 4) {
+      return Column(
+        children: [
+          Row(children: [
+            Expanded(child: tile(0, dense: true)),
+            const SizedBox(width: 8),
+            Expanded(child: tile(1, dense: true)),
+          ]),
+          const SizedBox(height: 8),
+          Row(children: [
+            Expanded(child: tile(2, dense: true)),
+            const SizedBox(width: 8),
+            Expanded(child: tile(3, dense: true)),
+          ]),
+        ],
+      );
+    }
+
+    return Column(
+      children: List.generate(count, (i) {
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 8),
+          child: tile(i),
+        );
+      }),
     );
   }
 
@@ -690,7 +763,7 @@ class _ListeningViewState extends State<_ListeningView> {
               )),
           if (scriptPlain.isNotEmpty) ...[
             const SizedBox(height: 8),
-            const Text('음성 스크립트',
+            Text(t('l.audio_script'),
                 style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w700,
@@ -713,7 +786,7 @@ class _ListeningViewState extends State<_ListeningView> {
           ],
           if (q.translationKo?.isNotEmpty == true) ...[
             const SizedBox(height: 10),
-            const Text('한국어 번역',
+            Text(t('l.translation'),
                 style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w700,
@@ -724,10 +797,10 @@ class _ListeningViewState extends State<_ListeningView> {
             Text(q.translationKo!,
                 style: const TextStyle(fontSize: 13.5, height: 1.55)),
           ],
-          if (q.explKo?.isNotEmpty == true) ...[
+          if (q.explFor(Store.instance.currentLanguage).isNotEmpty) ...[
             const SizedBox(height: 10),
-            const Text('해설',
-                style: TextStyle(
+            Text(t('q.explanation'),
+                style: const TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w700,
                   color: listeningPrimary,
@@ -735,7 +808,7 @@ class _ListeningViewState extends State<_ListeningView> {
                 )),
             const SizedBox(height: 6),
             Explanation(
-              text: q.explKo!,
+              text: q.explFor(Store.instance.currentLanguage),
               labelColor: listeningPrimary,
               bodyStyle: const TextStyle(
                 fontSize: 13.5,

@@ -111,8 +111,8 @@ const Map<String, String> _ko = {
   'study.cards_mode': '카드로 학습',
   // Cards
   'cards.tap_to_flip': '카드를 탭하면 뒤집혀요',
-  'cards.shuffle': '섞기',
-  'cards.reset': '원래 순서',
+  'cards.prev': '이전',
+  'cards.next': '다음',
   // Settings
   'settings.title': '설정',
   'settings.language': '언어',
@@ -268,8 +268,8 @@ const Map<String, String> _en = {
   'study.cards_mode': 'Study cards',
   // Cards (EN)
   'cards.tap_to_flip': 'Tap the card to flip',
-  'cards.shuffle': 'Shuffle',
-  'cards.reset': 'Reset order',
+  'cards.prev': 'Previous',
+  'cards.next': 'Next',
   'settings.title': 'Settings',
   'settings.language': 'Language',
   'settings.furigana': 'Show furigana',
@@ -415,8 +415,8 @@ const Map<String, String> _zh = {
   'study.cards_mode': '卡片学习',
   // Cards (ZH)
   'cards.tap_to_flip': '点击卡片翻面',
-  'cards.shuffle': '打乱',
-  'cards.reset': '原顺序',
+  'cards.prev': '上一张',
+  'cards.next': '下一张',
   'settings.title': '设置',
   'settings.language': '语言',
   'settings.furigana': '显示振假名',
