@@ -81,14 +81,6 @@ class _SettingsPageState extends State<SettingsPage> {
               await Store.instance.clearWordbook();
             },
           ),
-          _resetTile(
-            title: tx('settings.reset_srs', {'level': level}),
-            desc: t('settings.reset_srs_desc'),
-            confirmTitle: tx('reset.title', {'level': '$level — SRS'}),
-            action: () async {
-              await Store.instance.clearSrs();
-            },
-          ),
           const SizedBox(height: 20),
 
           _section(t('settings.about')),

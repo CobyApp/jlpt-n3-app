@@ -8,7 +8,10 @@ library;
 
 import 'package:flutter/material.dart';
 
+import '../data/vocab_match.dart';
 import '../theme.dart';
+import 'japanese_text.dart';
+import 'vocab_sheet.dart';
 
 const List<String> _explLabels = [
   '정답', '핵심 이유', '핵심', '이유', '해설',
@@ -70,14 +73,18 @@ class Explanation extends StatelessWidget {
   final Color labelColor;
   final TextStyle? bodyStyle;
   final double blockGap;
+  final VocabIndex? vocabIndex;
+  final Map<String, List<String>>? kanjiKo;
 
-  const Explanation({
+  Explanation({
     super.key,
     required this.text,
-    this.labelColor = brandPrimary,
+    Color? labelColor,
     this.bodyStyle,
     this.blockGap = 10,
-  });
+    this.vocabIndex,
+    this.kanjiKo,
+  }) : labelColor = labelColor ?? brandPrimary;
 
   @override
   Widget build(BuildContext context) {
@@ -95,7 +102,7 @@ class Explanation extends StatelessWidget {
     for (var i = 0; i < blocks.length; i++) {
       final b = blocks[i];
       if (i > 0) children.add(SizedBox(height: blockGap));
-      children.add(_block(b, body));
+      children.add(_block(context, b, body));
     }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -103,9 +110,24 @@ class Explanation extends StatelessWidget {
     );
   }
 
-  Widget _block(_Block b, TextStyle bodyStyle) {
+  Widget _bodyText(BuildContext context, String body, TextStyle style) {
+    if (vocabIndex == null) return Text(body, style: style);
+    return JapaneseText(
+      text: body,
+      index: vocabIndex!,
+      furigana: false,
+      baseStyle: style,
+      onWordTap: (e) => VocabSheet.show(
+        context,
+        entry: e,
+        kanjiKo: kanjiKo ?? const {},
+      ),
+    );
+  }
+
+  Widget _block(BuildContext context, _Block b, TextStyle bodyStyle) {
     if (b.label == null) {
-      return Text(b.body, style: bodyStyle);
+      return _bodyText(context, b.body, bodyStyle);
     }
     // 오답 분석 형태 — "1. ~, 2. ~, 3. ~" 면 list 로.
     if (b.label!.startsWith('오답')) {
@@ -142,7 +164,7 @@ class Explanation extends StatelessWidget {
                         ),
                       ),
                     ),
-                    Expanded(child: Text(body, style: bodyStyle)),
+                    Expanded(child: _bodyText(context, body, bodyStyle)),
                   ],
                 ),
               );
@@ -156,7 +178,7 @@ class Explanation extends StatelessWidget {
       children: [
         _labelChip(b.label!),
         const SizedBox(height: 4),
-        Text(b.body, style: bodyStyle),
+        _bodyText(context, b.body, bodyStyle),
       ],
     );
   }

@@ -5,10 +5,14 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../data/data_loader.dart';
+import '../data/vocab_match.dart';
 import '../l10n/strings.dart';
+import '../models/models.dart';
 import '../models/study.dart';
 import '../state/store.dart';
 import '../theme.dart';
+import '../widgets/japanese_text.dart';
+import '../widgets/vocab_sheet.dart';
 
 class StudyPage extends StatefulWidget {
   const StudyPage({super.key});
@@ -40,10 +44,13 @@ class _StudyPageState extends State<StudyPage>
     final results = await Future.wait([
       DataLoader.instance.loadStudy(),
       DataLoader.instance.loadKanjiKo(),
+      DataLoader.instance.loadVocab(),
     ]);
+    final vocab = results[2] as List<VocabEntry>;
     return _StudyBundle(
       content: results[0] as StudyContent,
       kanjiKo: results[1] as Map<String, List<String>>,
+      vocabIndex: VocabIndex.build(vocab),
     );
   }
 
@@ -120,9 +127,24 @@ class _StudyPageState extends State<StudyPage>
           return TabBarView(
             controller: _tab,
             children: [
-              _VocabTab(themes: b.content.vocab, lang: lang, kanjiKo: b.kanjiKo),
-              _ExprTab(items: b.content.expressions, lang: lang),
-              _GrammarTab(items: b.content.grammar, lang: lang),
+              _VocabTab(
+                themes: b.content.vocab,
+                lang: lang,
+                kanjiKo: b.kanjiKo,
+                vocabIndex: b.vocabIndex,
+              ),
+              _ExprTab(
+                items: b.content.expressions,
+                lang: lang,
+                kanjiKo: b.kanjiKo,
+                vocabIndex: b.vocabIndex,
+              ),
+              _GrammarTab(
+                items: b.content.grammar,
+                lang: lang,
+                kanjiKo: b.kanjiKo,
+                vocabIndex: b.vocabIndex,
+              ),
             ],
           );
         },
@@ -134,7 +156,12 @@ class _StudyPageState extends State<StudyPage>
 class _StudyBundle {
   final StudyContent content;
   final Map<String, List<String>> kanjiKo;
-  _StudyBundle({required this.content, required this.kanjiKo});
+  final VocabIndex vocabIndex;
+  _StudyBundle({
+    required this.content,
+    required this.kanjiKo,
+    required this.vocabIndex,
+  });
 }
 
 // ─────────────────────────── 공통 위젯 ───────────────────────────
@@ -161,11 +188,18 @@ class _Card extends StatelessWidget {
       );
 }
 
-/// 일본어 + 번역 페어 블록 (예문 등).
+/// 일본어 + 번역 페어 블록 (예문 등). 일본어는 단어 탭 가능.
 class _BilingualBlock extends StatelessWidget {
   final String ja;
   final String tr;
-  const _BilingualBlock({required this.ja, required this.tr});
+  final VocabIndex? vocabIndex;
+  final Map<String, List<String>>? kanjiKo;
+  const _BilingualBlock({
+    required this.ja,
+    required this.tr,
+    this.vocabIndex,
+    this.kanjiKo,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -181,14 +215,31 @@ class _BilingualBlock extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            ja,
-            style: const TextStyle(
-              fontSize: 14.5,
-              height: 1.55,
-              fontWeight: FontWeight.w600,
+          if (vocabIndex != null)
+            JapaneseText(
+              text: ja,
+              index: vocabIndex!,
+              furigana: false,
+              baseStyle: const TextStyle(
+                fontSize: 14.5,
+                height: 1.55,
+                fontWeight: FontWeight.w600,
+              ),
+              onWordTap: (e) => VocabSheet.show(
+                context,
+                entry: e,
+                kanjiKo: kanjiKo ?? const {},
+              ),
+            )
+          else
+            Text(
+              ja,
+              style: const TextStyle(
+                fontSize: 14.5,
+                height: 1.55,
+                fontWeight: FontWeight.w600,
+              ),
             ),
-          ),
           if (tr.isNotEmpty)
             Padding(
               padding: const EdgeInsets.only(top: 4),
@@ -213,10 +264,12 @@ class _VocabTab extends StatelessWidget {
   final List<StudyVocabTheme> themes;
   final String lang;
   final Map<String, List<String>> kanjiKo;
+  final VocabIndex vocabIndex;
   const _VocabTab({
     required this.themes,
     required this.lang,
     required this.kanjiKo,
+    required this.vocabIndex,
   });
 
   bool _isKanji(String c) {
@@ -365,6 +418,8 @@ class _VocabTab extends StatelessWidget {
             _BilingualBlock(
               ja: item.exJa,
               tr: item.exampleFor(lang),
+              vocabIndex: vocabIndex,
+              kanjiKo: kanjiKo,
             ),
           ],
         ],
@@ -378,7 +433,14 @@ class _VocabTab extends StatelessWidget {
 class _ExprTab extends StatelessWidget {
   final List<StudyExpression> items;
   final String lang;
-  const _ExprTab({required this.items, required this.lang});
+  final Map<String, List<String>> kanjiKo;
+  final VocabIndex vocabIndex;
+  const _ExprTab({
+    required this.items,
+    required this.lang,
+    required this.kanjiKo,
+    required this.vocabIndex,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -420,7 +482,12 @@ class _ExprTab extends StatelessWidget {
               ),
               if (e.exJa.isNotEmpty) ...[
                 const SizedBox(height: 12),
-                _BilingualBlock(ja: e.exJa, tr: e.exampleFor(lang)),
+                _BilingualBlock(
+                  ja: e.exJa,
+                  tr: e.exampleFor(lang),
+                  vocabIndex: vocabIndex,
+                  kanjiKo: kanjiKo,
+                ),
               ],
               if (e.tipFor(lang).isNotEmpty) ...[
                 const SizedBox(height: 10),
@@ -456,7 +523,14 @@ class _ExprTab extends StatelessWidget {
 class _GrammarTab extends StatelessWidget {
   final List<StudyGrammar> items;
   final String lang;
-  const _GrammarTab({required this.items, required this.lang});
+  final Map<String, List<String>> kanjiKo;
+  final VocabIndex vocabIndex;
+  const _GrammarTab({
+    required this.items,
+    required this.lang,
+    required this.kanjiKo,
+    required this.vocabIndex,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -498,7 +572,12 @@ class _GrammarTab extends StatelessWidget {
               ),
               if (g.exJa.isNotEmpty) ...[
                 const SizedBox(height: 12),
-                _BilingualBlock(ja: g.exJa, tr: g.exampleFor(lang)),
+                _BilingualBlock(
+                  ja: g.exJa,
+                  tr: g.exampleFor(lang),
+                  vocabIndex: vocabIndex,
+                  kanjiKo: kanjiKo,
+                ),
               ],
               if (g.noteFor(lang).isNotEmpty) ...[
                 const SizedBox(height: 10),

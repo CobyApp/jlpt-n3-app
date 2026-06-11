@@ -10,7 +10,6 @@ import 'package:flutter/material.dart';
 
 import '../l10n/strings.dart';
 import '../models/models.dart';
-import '../state/store.dart';
 import '../theme.dart';
 
 enum StudyOrder { random, weakest, unseen }
@@ -90,47 +89,18 @@ class _StudyModalState extends State<StudyModal>
   }
 
   List<VocabEntry> _orderWords(List<VocabEntry> ws, StudyOrder order) {
-    if (order == StudyOrder.random) {
-      final list = [...ws]..shuffle(Random());
-      return list;
-    }
-    if (order == StudyOrder.unseen) {
-      final unseen = <VocabEntry>[];
-      final rest = <VocabEntry>[];
-      for (final w in ws) {
-        final s = Store.instance.getSrs(w.w);
-        if (s.level < 0) {
-          unseen.add(w);
-        } else {
-          rest.add(w);
-        }
-      }
-      unseen.shuffle(Random());
-      rest.shuffle(Random());
-      return [...unseen, ...rest];
-    }
-    // weakest
-    final annotated =
-        ws.map((w) => (w: w, s: Store.instance.getSrs(w.w))).toList();
-    annotated.sort((a, b) {
-      final la = a.s.level < 0 ? -1 : a.s.level;
-      final lb = b.s.level < 0 ? -1 : b.s.level;
-      if (la != lb) return la.compareTo(lb);
-      return a.s.lastTs.compareTo(b.s.lastTs);
-    });
-    return annotated.map((x) => x.w).toList();
+    // SRS 저장 안 함 → 모든 모드를 random 으로 통일.
+    final list = [...ws]..shuffle(Random());
+    return list;
   }
 
-  Future<void> _act(SrsAction action) async {
+  void _act(SrsAction action) {
     if (_queue.isEmpty) return;
     final w = _queue.removeAt(0);
-    await Store.instance.recordSrs(w.w, action);
     switch (action) {
       case SrsAction.again:
         _stats.again++;
         _againCount[w.w] = (_againCount[w.w] ?? 0) + 1;
-        // 모르겠다 → 큐 뒤로 재투입.
-        // 마지막 한 장이었다면 바로 같은 카드만 또 나오니까 그건 그대로 OK.
         _queue.add(w);
       case SrsAction.easy:
         _stats.easy++;
@@ -382,7 +352,6 @@ class _StudyModalState extends State<StudyModal>
 
   Widget _card() {
     final w = _queue.first;
-    final srs = Store.instance.getSrs(w.w);
     final hanjas = <(String, String, String)>[];
     for (final ch in w.w.split('')) {
       if (!_kanjiRe.hasMatch(ch)) continue;
@@ -412,33 +381,6 @@ class _StudyModalState extends State<StudyModal>
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
-                        children: [
-                          if (srs.level >= 0)
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 8, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: srs.level >= 5
-                                    ? const Color(0xFFDCFCE7)
-                                    : const Color(0xFFF3F4F6),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Text(
-                                srs.level >= 5
-                                    ? '✓ 마스터'
-                                    : 'Lv.${srs.level}',
-                                style: TextStyle(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w800,
-                                  color: srs.level >= 5
-                                      ? const Color(0xFF15803D)
-                                      : const Color(0xFF374151),
-                                ),
-                              ),
-                            ),
-                        ],
-                      ),
                       const Spacer(),
                       Center(
                         child: Column(

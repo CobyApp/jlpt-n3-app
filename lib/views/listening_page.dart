@@ -815,6 +815,8 @@ class _ListeningViewState extends State<_ListeningView> {
                 height: 1.6,
                 color: ink2,
               ),
+              vocabIndex: widget.load.idx,
+              kanjiKo: widget.load.kanjiKo,
             ),
           ],
         ],

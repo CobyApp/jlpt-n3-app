@@ -376,7 +376,12 @@ class _QuestionViewState extends State<_QuestionView> {
           // CTA 누르기 전에 충분히 읽고 넘어가도록.
           if (_graded) ...[
             const SizedBox(height: 14),
-            _Feedback(q: l.q, picked: _picked),
+            _Feedback(
+              q: l.q,
+              picked: _picked,
+              vocabIndex: l.idx,
+              kanjiKo: l.kanjiKo,
+            ),
           ],
         ],
             ),
@@ -575,7 +580,14 @@ class _QuestionViewState extends State<_QuestionView> {
 class _Feedback extends StatelessWidget {
   final Question q;
   final int picked;
-  const _Feedback({required this.q, required this.picked});
+  final VocabIndex? vocabIndex;
+  final Map<String, List<String>>? kanjiKo;
+  const _Feedback({
+    required this.q,
+    required this.picked,
+    this.vocabIndex,
+    this.kanjiKo,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -628,7 +640,7 @@ class _Feedback extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-          Explanation(text: expl),
+          Explanation(text: expl, vocabIndex: vocabIndex, kanjiKo: kanjiKo),
         ],
       ),
     );

@@ -7,10 +7,14 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../data/data_loader.dart';
+import '../data/vocab_match.dart';
 import '../l10n/strings.dart';
+import '../models/models.dart';
 import '../models/study.dart';
 import '../state/store.dart';
 import '../theme.dart';
+import '../widgets/japanese_text.dart';
+import '../widgets/vocab_sheet.dart';
 
 class StudyCardsPage extends StatefulWidget {
   /// 'vocab' | 'expr' | 'grammar'
@@ -38,9 +42,12 @@ class _StudyCardsPageState extends State<StudyCardsPage> {
     final results = await Future.wait([
       DataLoader.instance.loadStudy(),
       DataLoader.instance.loadKanjiKo(),
+      DataLoader.instance.loadVocab(),
     ]);
     final c = results[0] as StudyContent;
     final kk = results[1] as Map<String, List<String>>;
+    final vocab = results[2] as List<VocabEntry>;
+    final vi = VocabIndex.build(vocab);
     final cards = <_Card>[];
     if (widget.type == 'vocab') {
       for (final th in c.vocab) {
@@ -57,7 +64,7 @@ class _StudyCardsPageState extends State<StudyCardsPage> {
         cards.add(_Card.fromGrammar(g));
       }
     }
-    return _Bundle(cards: cards, kanjiKo: kk);
+    return _Bundle(cards: cards, kanjiKo: kk, vocabIndex: vi);
   }
 
   @override
@@ -131,6 +138,7 @@ class _StudyCardsPageState extends State<StudyCardsPage> {
                       card: b.cards[i],
                       lang: lang,
                       kanjiKo: b.kanjiKo,
+                      vocabIndex: b.vocabIndex,
                     );
                   },
                 ),
@@ -240,7 +248,12 @@ class _StudyCardsPageState extends State<StudyCardsPage> {
 class _Bundle {
   final List<_Card> cards;
   final Map<String, List<String>> kanjiKo;
-  _Bundle({required this.cards, required this.kanjiKo});
+  final VocabIndex vocabIndex;
+  _Bundle({
+    required this.cards,
+    required this.kanjiKo,
+    required this.vocabIndex,
+  });
 }
 
 /// 카드 한 장의 데이터 — 단어/표현/문법 공통.
@@ -350,10 +363,12 @@ class _FlipCard extends StatefulWidget {
   final _Card card;
   final String lang;
   final Map<String, List<String>> kanjiKo;
+  final VocabIndex vocabIndex;
   const _FlipCard({
     required this.card,
     required this.lang,
     required this.kanjiKo,
+    required this.vocabIndex,
   });
 
   @override
@@ -583,10 +598,20 @@ class _FlipCardState extends State<_FlipCard>
                       color: brandPrimary,
                       letterSpacing: 0.5)),
               const SizedBox(height: 6),
-              Text(c.exJa,
-                  style: const TextStyle(
-                      fontSize: 14, height: 1.55,
-                      fontWeight: FontWeight.w600)),
+              JapaneseText(
+                text: c.exJa,
+                index: widget.vocabIndex,
+                furigana: false,
+                baseStyle: const TextStyle(
+                    fontSize: 14,
+                    height: 1.55,
+                    fontWeight: FontWeight.w600),
+                onWordTap: (e) => VocabSheet.show(
+                  context,
+                  entry: e,
+                  kanjiKo: widget.kanjiKo,
+                ),
+              ),
               if (c.exampleFor(widget.lang).isNotEmpty)
                 Padding(
                   padding: const EdgeInsets.only(top: 4),
