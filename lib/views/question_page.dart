@@ -8,6 +8,7 @@ import '../data/categories.dart';
 import '../data/data_loader.dart';
 import '../data/stem_format.dart';
 import '../data/vocab_match.dart';
+import '../l10n/strings.dart';
 import '../models/models.dart';
 import '../state/store.dart';
 import '../theme.dart';
@@ -56,7 +57,8 @@ class _QuestionPageState extends State<QuestionPage> {
     final idx = VocabIndex.build(vocab);
     final q = exam.questions.firstWhere(
       (x) => x.n == widget.n,
-      orElse: () => throw Exception('문제 ${widget.n}을 찾을 수 없습니다.'),
+      orElse: () =>
+          throw Exception(tx('q.problem_not_found', {'n': widget.n})),
     );
     await Store.instance.setLast(widget.examId, widget.n);
     return _Load(exam, q, idx, kanjiKo);
@@ -193,10 +195,10 @@ class _QuestionViewState extends State<_QuestionView> {
 
   /// 메인 CTA 의 라벨.
   String _primaryLabel(_Load l) {
-    if (!_graded) return '정답 확인';
-    if (widget.n < _max) return '다음 →';
-    if (l.exam.listening != null) return '청해 →';
-    return '회차 완료';
+    if (!_graded) return t('q.check_answer');
+    if (widget.n < _max) return t('q.next');
+    if (l.exam.listening != null) return t('q.to_listening');
+    return t('q.complete_round');
   }
 
   @override
@@ -234,7 +236,7 @@ class _QuestionViewState extends State<_QuestionView> {
                   .copyWith(furigana: !furi));
               if (mounted) setState(() {});
             },
-            child: Text('후리가나 ${furi ? 'ON' : 'OFF'}',
+            child: Text(furi ? t('l.furigana_on') : t('l.furigana_off'),
                 style: TextStyle(
                   color: furi ? accentPrimary : textMuted,
                   fontWeight: FontWeight.w700,
@@ -303,8 +305,8 @@ class _QuestionViewState extends State<_QuestionView> {
                     ExpansionTile(
                       tilePadding: EdgeInsets.zero,
                       childrenPadding: EdgeInsets.zero,
-                      title: const Text('한국어 번역',
-                          style: TextStyle(
+                      title: Text(t('q.translation_ko'),
+                          style: const TextStyle(
                               fontSize: 13, fontWeight: FontWeight.w700)),
                       children: [
                         Padding(
@@ -369,78 +371,7 @@ class _QuestionViewState extends State<_QuestionView> {
               style: TextStyle(fontSize: 14, color: textMuted),
             ),
           const SizedBox(height: 16),
-          ...List.generate(l.q.opts.length, (i) {
-            final picked = i == _picked;
-            final isCorrect = _graded && i == l.q.correct;
-            final isWrong = _graded && i == _picked && i != l.q.correct;
-            Color bg = Colors.white;
-            Color border = cardBorder;
-            Color fg = const Color(0xFF111827);
-            if (isCorrect) {
-              bg = const Color(0xFFDCFCE7);
-              border = const Color(0xFF15803D);
-            } else if (isWrong) {
-              bg = const Color(0xFFFEE2E2);
-              border = const Color(0xFFB91C1C);
-            } else if (picked) {
-              // 선택된 옵션 — "오답" 처럼 안 보이게.
-              // 옅은 핑크 bg + 또렷한 핑크 보더 + 검정 글자.
-              // 텍스트가 빨갛지 않으니 에러 느낌이 사라짐.
-              bg = brandSurface;
-              border = brandPrimary;
-              fg = ink;
-            }
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 10),
-              child: Material(
-                color: bg,
-                borderRadius: BorderRadius.circular(14),
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(14),
-                  onTap: _graded ? null : () => _select(i),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(14),
-                      // 보더 굵기 고정 — 선택 유무로 카드 사이즈가 밀리지 않게.
-                      border: Border.all(color: border, width: 1.5),
-                    ),
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 14, vertical: 14),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('${i + 1}.',
-                            style: TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w800,
-                              color: fg,
-                            )),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: JapaneseText(
-                            text: l.q.opts[i],
-                            index: l.idx,
-                            furigana: furi,
-                            baseStyle: TextStyle(
-                              fontSize: 15,
-                              height: 1.5,
-                              color: fg,
-                              fontWeight: picked ? FontWeight.w700 : FontWeight.w500,
-                            ),
-                            onWordTap: (e) => VocabSheet.show(
-                              context,
-                              entry: e,
-                              kanjiKo: l.kanjiKo,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            );
-          }),
+          _buildOptions(context, l, furi),
           // 피드백 — 채점 후에만 표시. 스크롤 영역 안에 두어 사용자가
           // CTA 누르기 전에 충분히 읽고 넘어가도록.
           if (_graded) ...[
@@ -453,6 +384,111 @@ class _QuestionViewState extends State<_QuestionView> {
           _bottomBar(context, l, n),
         ],
       ),
+    );
+  }
+
+  /// 옵션 텍스트가 짧으면 (= 최대 8자 이하) 2x2 그리드, 길면 세로 스택.
+  Widget _buildOptions(BuildContext context, _Load l, bool furi) {
+    final plainTexts = l.q.opts
+        .map((o) => o.replaceAll(RegExp(r'<[^>]+>'), '').trim())
+        .toList();
+    final maxLen = plainTexts.fold<int>(0, (m, s) => s.length > m ? s.length : m);
+    final compact = maxLen <= 8;
+
+    Widget tile(int i, {bool dense = false}) {
+      final picked = i == _picked;
+      final isCorrect = _graded && i == l.q.correct;
+      final isWrong = _graded && i == _picked && i != l.q.correct;
+      Color bg = Colors.white;
+      Color border = cardBorder;
+      Color fg = const Color(0xFF111827);
+      if (isCorrect) {
+        bg = const Color(0xFFDCFCE7);
+        border = const Color(0xFF15803D);
+      } else if (isWrong) {
+        bg = const Color(0xFFFEE2E2);
+        border = const Color(0xFFB91C1C);
+      } else if (picked) {
+        bg = brandSurface;
+        border = brandPrimary;
+        fg = ink;
+      }
+      return Material(
+        color: bg,
+        borderRadius: BorderRadius.circular(14),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(14),
+          onTap: _graded ? null : () => _select(i),
+          child: Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: border, width: 1.5),
+            ),
+            padding: EdgeInsets.symmetric(
+                horizontal: dense ? 12 : 14,
+                vertical: dense ? 12 : 14),
+            child: Row(
+              crossAxisAlignment:
+                  dense ? CrossAxisAlignment.center : CrossAxisAlignment.start,
+              children: [
+                Text('${i + 1}.',
+                    style: TextStyle(
+                      fontSize: dense ? 14 : 15,
+                      fontWeight: FontWeight.w800,
+                      color: fg,
+                    )),
+                SizedBox(width: dense ? 6 : 10),
+                Expanded(
+                  child: JapaneseText(
+                    text: l.q.opts[i],
+                    index: l.idx,
+                    furigana: furi,
+                    baseStyle: TextStyle(
+                      fontSize: dense ? 14 : 15,
+                      height: 1.4,
+                      color: fg,
+                      fontWeight: picked ? FontWeight.w700 : FontWeight.w500,
+                    ),
+                    onWordTap: (e) => VocabSheet.show(
+                      context,
+                      entry: e,
+                      kanjiKo: l.kanjiKo,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    if (compact && l.q.opts.length == 4) {
+      // 2x2 그리드
+      return Column(
+        children: [
+          Row(children: [
+            Expanded(child: tile(0, dense: true)),
+            const SizedBox(width: 8),
+            Expanded(child: tile(1, dense: true)),
+          ]),
+          const SizedBox(height: 8),
+          Row(children: [
+            Expanded(child: tile(2, dense: true)),
+            const SizedBox(width: 8),
+            Expanded(child: tile(3, dense: true)),
+          ]),
+        ],
+      );
+    }
+
+    return Column(
+      children: List.generate(l.q.opts.length, (i) {
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 10),
+          child: tile(i),
+        );
+      }),
     );
   }
 
@@ -531,10 +567,10 @@ class _Feedback extends StatelessWidget {
     final tint = correct ? okSoft : dangerSoft;
     final verdictColor = correct ? ok : danger;
     final emoji = correct ? '🎉' : '🤔';
-    final verdict = correct ? '정답!' : '아쉬워요';
-    final expl = (q.explKo?.isNotEmpty ?? false)
-        ? q.explKo!
-        : (q.expl.isNotEmpty ? q.expl : '(해설 없음)');
+    final verdict = correct ? t('q.verdict_correct') : t('q.verdict_wrong');
+    final lang = Store.instance.currentLanguage;
+    final explText = q.explFor(lang);
+    final expl = explText.isNotEmpty ? explText : t('q.no_explanation');
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
@@ -567,7 +603,7 @@ class _Feedback extends StatelessWidget {
                   )),
               const SizedBox(width: 8),
               if (!correct)
-                Text('정답 ${q.correct + 1}번',
+                Text(tx('q.answer_was', {'n': q.correct + 1}),
                     style: const TextStyle(
                       fontSize: 12,
                       color: textMuted,

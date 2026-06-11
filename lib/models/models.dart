@@ -79,6 +79,7 @@ class Question {
   final String category;
   final String expl;
   final String? explKo;
+  final String? explZh;
   final String? srcLabel;
   final int? srcN;
 
@@ -93,6 +94,7 @@ class Question {
     required this.category,
     required this.expl,
     required this.explKo,
+    required this.explZh,
     required this.srcLabel,
     required this.srcN,
   });
@@ -110,6 +112,7 @@ class Question {
         category: j['category'] as String? ?? '',
         expl: j['expl'] as String? ?? '',
         explKo: j['expl_ko'] as String?,
+        explZh: j['expl_zh'] as String?,
         srcLabel: j['src_label'] as String?,
         srcN: (j['src_n'] as num?)?.toInt(),
       );
@@ -125,9 +128,19 @@ class Question {
         category: category,
         expl: expl,
         explKo: explKo,
+        explZh: explZh,
         srcLabel: srcLabel ?? this.srcLabel,
         srcN: srcN ?? this.srcN,
       );
+
+  /// 현재 언어에 맞춰 해설 텍스트를 고른다. fallback: ko → en.
+  String explFor(String lang) {
+    if (lang == 'zh' && (explZh?.isNotEmpty ?? false)) return explZh!;
+    if (lang == 'en' && expl.isNotEmpty) return expl;
+    if ((explKo?.isNotEmpty ?? false)) return explKo!;
+    if (expl.isNotEmpty) return expl;
+    return '';
+  }
 }
 
 class ListeningQuestion {
@@ -139,6 +152,7 @@ class ListeningQuestion {
   final String scriptHtml;
   final String? translationKo;
   final String? explKo;
+  final String? explZh;
   final String explanationEn;
 
   ListeningQuestion({
@@ -150,6 +164,7 @@ class ListeningQuestion {
     required this.scriptHtml,
     required this.translationKo,
     required this.explKo,
+    required this.explZh,
     required this.explanationEn,
   });
 
@@ -167,8 +182,18 @@ class ListeningQuestion {
         scriptHtml: j['script_html'] as String? ?? '',
         translationKo: j['translation_ko'] as String?,
         explKo: j['expl_ko'] as String?,
+        explZh: j['expl_zh'] as String?,
         explanationEn: j['explanation_en'] as String? ?? '',
       );
+
+  /// 현재 언어에 맞춘 해설 텍스트.
+  String explFor(String lang) {
+    if (lang == 'zh' && (explZh?.isNotEmpty ?? false)) return explZh!;
+    if (lang == 'en' && explanationEn.isNotEmpty) return explanationEn;
+    if ((explKo?.isNotEmpty ?? false)) return explKo!;
+    if (explanationEn.isNotEmpty) return explanationEn;
+    return '';
+  }
 }
 
 class ListeningSubsection {
@@ -270,12 +295,14 @@ class VocabEntry {
   final String r;
   final String m;
   final String? mKo;
+  final String? mZh;
 
   VocabEntry({
     required this.w,
     required this.r,
     required this.m,
     required this.mKo,
+    required this.mZh,
   });
 
   factory VocabEntry.fromJson(Map<String, dynamic> j) => VocabEntry(
@@ -283,7 +310,17 @@ class VocabEntry {
         r: j['r'] as String? ?? '',
         m: j['m'] as String? ?? '',
         mKo: j['m_ko'] as String?,
+        mZh: j['m_zh'] as String?,
       );
+
+  /// 현재 언어에 맞는 의미. fallback: 요청 언어 빈 → en(m) → ko
+  String meaningFor(String lang) {
+    if (lang == 'en' && m.isNotEmpty) return m;
+    if (lang == 'zh' && (mZh?.isNotEmpty ?? false)) return mZh!;
+    if ((mKo?.isNotEmpty ?? false)) return mKo!;
+    if (m.isNotEmpty) return m;
+    return '';
+  }
 }
 
 /// Persisted answer record.
