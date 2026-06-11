@@ -8,6 +8,9 @@ import 'views/home_page.dart';
 import 'views/exam_page.dart';
 import 'views/question_page.dart';
 import 'views/listening_page.dart';
+import 'views/settings_page.dart';
+import 'views/study_cards_page.dart';
+import 'views/study_page.dart';
 import 'views/wordbook_page.dart';
 import 'views/wordlist_page.dart';
 
@@ -17,6 +20,13 @@ GoRouter buildRouter() {
     routes: [
       GoRoute(path: '/', builder: (c, s) => const HomePage()),
       GoRoute(path: '/wordbook', builder: (c, s) => const WordbookPage()),
+      GoRoute(path: '/study', builder: (c, s) => const StudyPage()),
+      GoRoute(
+        path: '/study/cards/:type',
+        builder: (c, s) =>
+            StudyCardsPage(type: s.pathParameters['type']!),
+      ),
+      GoRoute(path: '/settings', builder: (c, s) => const SettingsPage()),
       GoRoute(
         path: '/exam/:id',
         builder: (c, s) => ExamPage(examId: s.pathParameters['id']!),

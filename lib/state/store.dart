@@ -42,12 +42,22 @@ class Store extends ChangeNotifier {
   static const _kListenProgress = 'jlpt:listen-progress';
   static const _kHomeTab = 'jlpt:home-tab';
   static const _kSrs = 'jlpt:srs';
+  static const _kLang = 'jlpt:lang';
 
   bool get ready => _ready;
 
   Future<void> init() async {
     _prefs = await SharedPreferences.getInstance();
     _ready = true;
+  }
+
+  // ── Language (ko / en / zh) ──
+  String get currentLanguage => _prefs.getString(_kLang) ?? 'ko';
+
+  Future<void> setLanguage(String lang) async {
+    if (lang == currentLanguage) return;
+    await _prefs.setString(_kLang, lang);
+    notifyListeners();
   }
 
   // ── Internal helpers ──

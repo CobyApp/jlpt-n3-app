@@ -8,6 +8,7 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 
+import '../l10n/strings.dart';
 import '../models/models.dart';
 import '../state/store.dart';
 import '../theme.dart';
@@ -23,7 +24,7 @@ class StudyModal extends StatefulWidget {
     super.key,
     required this.words,
     required this.kanjiKo,
-    this.title = '단어장 외우기',
+    this.title = '',
     this.order = StudyOrder.weakest,
   });
 
@@ -31,7 +32,7 @@ class StudyModal extends StatefulWidget {
     BuildContext context, {
     required List<VocabEntry> words,
     required Map<String, List<String>> kanjiKo,
-    String title = '단어장 외우기',
+    String? title,
     StudyOrder order = StudyOrder.weakest,
   }) {
     if (words.isEmpty) return Future.value();
@@ -41,7 +42,7 @@ class StudyModal extends StatefulWidget {
         builder: (_) => StudyModal(
           words: words,
           kanjiKo: kanjiKo,
-          title: title,
+          title: title ?? t('sm.session_default'),
           order: order,
         ),
       ),
@@ -60,8 +61,12 @@ class _Stats {
 
 class _StudyModalState extends State<StudyModal>
     with SingleTickerProviderStateMixin {
+  /// 처음 출제 순서 (원본). 결과 화면에서 헷갈렸던 단어 표시에 사용.
+  late List<VocabEntry> _initialOrder;
+  /// 남아있는 학습 큐 (모르겠다고 한 단어는 뒤로 재투입).
   late List<VocabEntry> _queue;
-  int _i = 0;
+  /// 단어별 "또" 누른 횟수 — 결과 화면 정렬용.
+  final Map<String, int> _againCount = {};
   bool _revealed = false;
   final _stats = _Stats();
   static final _kanjiRe = RegExp(r'[一-龯々ヶ]');
@@ -69,7 +74,19 @@ class _StudyModalState extends State<StudyModal>
   @override
   void initState() {
     super.initState();
-    _queue = _orderWords(widget.words, widget.order);
+    _initialOrder = _orderWords(widget.words, widget.order);
+    _queue = [..._initialOrder];
+  }
+
+  void _restart() {
+    setState(() {
+      _againCount.clear();
+      _stats.easy = 0;
+      _stats.again = 0;
+      _stats.skip = 0;
+      _queue = [..._initialOrder];
+      _revealed = false;
+    });
   }
 
   List<VocabEntry> _orderWords(List<VocabEntry> ws, StudyOrder order) {
@@ -105,19 +122,24 @@ class _StudyModalState extends State<StudyModal>
   }
 
   Future<void> _act(SrsAction action) async {
-    final w = _queue[_i];
+    if (_queue.isEmpty) return;
+    final w = _queue.removeAt(0);
     await Store.instance.recordSrs(w.w, action);
     switch (action) {
       case SrsAction.again:
         _stats.again++;
+        _againCount[w.w] = (_againCount[w.w] ?? 0) + 1;
+        // 모르겠다 → 큐 뒤로 재투입.
+        // 마지막 한 장이었다면 바로 같은 카드만 또 나오니까 그건 그대로 OK.
+        _queue.add(w);
       case SrsAction.easy:
         _stats.easy++;
       case SrsAction.skip:
         _stats.skip++;
+        _queue.add(w);
     }
     if (mounted) {
       setState(() {
-        _i++;
         _revealed = false;
       });
     }
@@ -125,8 +147,11 @@ class _StudyModalState extends State<StudyModal>
 
   @override
   Widget build(BuildContext context) {
-    final total = _queue.length;
-    final done = _i >= total;
+    final total = _initialOrder.length;
+    final remaining = _queue.length;
+    final done = remaining == 0;
+    // 진행도: 완료한 카드 비율 (easy 누른 횟수 / 전체)
+    final progress = total == 0 ? 0.0 : (_stats.easy / total).clamp(0.0, 1.0);
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
@@ -139,14 +164,16 @@ class _StudyModalState extends State<StudyModal>
             Text(widget.title,
                 style: const TextStyle(
                     fontSize: 14, fontWeight: FontWeight.w800)),
-            Text(done ? '완료' : '${_i + 1} / $total',
+            Text(done
+                ? t('exam.done')
+                : tx('sm.remaining', {'n': remaining}),
                 style: const TextStyle(fontSize: 11, color: textMuted)),
           ],
         ),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(3),
           child: LinearProgressIndicator(
-            value: total == 0 ? 0 : (_i / total).clamp(0, 1),
+            value: progress,
             backgroundColor: const Color(0xFFE5E7EB),
             color: accentPrimary,
             minHeight: 3,
@@ -163,57 +190,198 @@ class _StudyModalState extends State<StudyModal>
   }
 
   Widget _finished() {
-    return Padding(
-      padding: const EdgeInsets.all(28),
-      child: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
+    // 헷갈렸던 단어 = _againCount > 0. 원본 순서 유지하면서 횟수 내림차순.
+    final confused = _initialOrder
+        .where((w) => (_againCount[w.w] ?? 0) > 0)
+        .toList()
+      ..sort((a, b) =>
+          (_againCount[b.w] ?? 0).compareTo(_againCount[a.w] ?? 0));
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
+      children: [
+        const SizedBox(height: 8),
+        const Center(child: Text('🎉', style: TextStyle(fontSize: 56))),
+        const SizedBox(height: 8),
+        Center(
+          child: Text(t('sm.done_title'),
+              style: const TextStyle(
+                  fontSize: 22, fontWeight: FontWeight.w900)),
+        ),
+        const SizedBox(height: 4),
+        Center(
+          child: Text(t('sm.done_subtitle'),
+              style: const TextStyle(fontSize: 12, color: textMuted)),
+        ),
+        const SizedBox(height: 22),
+        // 통계 카드
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: cardBorder),
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: _statCell(
+                  label: t('sm.easy'),
+                  value: '${_stats.easy}',
+                  color: const Color(0xFF15803D),
+                ),
+              ),
+              Container(width: 1, height: 36, color: cardBorder),
+              Expanded(
+                child: _statCell(
+                  label: t('sm.again'),
+                  value: '${_stats.again}',
+                  color: const Color(0xFFB91C1C),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 22),
+        // 헷갈렸던 단어
+        Row(
           children: [
-            const Text('🎉',
-                style: TextStyle(fontSize: 56)),
-            const SizedBox(height: 8),
-            const Text('학습 완료',
-                style: TextStyle(
-                    fontSize: 22, fontWeight: FontWeight.w900)),
-            const SizedBox(height: 14),
-            _statRow('쉬워요', _stats.easy, const Color(0xFF15803D)),
-            _statRow('또 보기', _stats.again, const Color(0xFFB91C1C)),
-            const SizedBox(height: 22),
-            FilledButton(
-              style: FilledButton.styleFrom(backgroundColor: accentPrimary),
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('완료'),
+            Text(t('sm.confused_title'),
+                style: const TextStyle(
+                    fontSize: 13, fontWeight: FontWeight.w800)),
+            const SizedBox(width: 6),
+            Text('${confused.length}',
+                style: const TextStyle(
+                    fontSize: 12,
+                    color: textMuted,
+                    fontWeight: FontWeight.w700)),
+          ],
+        ),
+        const SizedBox(height: 8),
+        if (confused.isEmpty)
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF0FDF4),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.check_circle_rounded,
+                    color: Color(0xFF15803D), size: 18),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(t('sm.confused_empty'),
+                      style: const TextStyle(
+                          fontSize: 13,
+                          color: Color(0xFF166534),
+                          fontWeight: FontWeight.w700)),
+                ),
+              ],
+            ),
+          )
+        else
+          ...confused.map((w) {
+            final n = _againCount[w.w] ?? 0;
+            return Container(
+              margin: const EdgeInsets.only(bottom: 6),
+              padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: cardBorder),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text.rich(TextSpan(children: [
+                          TextSpan(
+                            text: w.w,
+                            style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w800),
+                          ),
+                          if (w.r.isNotEmpty)
+                            TextSpan(
+                                text: '  ${w.r}',
+                                style: const TextStyle(
+                                    fontSize: 11, color: textMuted)),
+                        ])),
+                        Padding(
+                          padding: const EdgeInsets.only(top: 2),
+                          child: Text(
+                            (w.mKo?.isNotEmpty == true)
+                                ? w.mKo!
+                                : (w.m.isEmpty ? '—' : w.m),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                                fontSize: 12.5, color: textMuted),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFEE2E2),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      tx('sm.again_n', {'n': n}),
+                      style: const TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w800,
+                          color: Color(0xFFB91C1C)),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }),
+        const SizedBox(height: 18),
+        Row(
+          children: [
+            Expanded(
+              child: OutlinedButton(
+                onPressed: _restart,
+                child: Text(t('sm.restart')),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: FilledButton(
+                style: FilledButton.styleFrom(backgroundColor: accentPrimary),
+                onPressed: () => Navigator.of(context).pop(),
+                child: Text(t('exam.done')),
+              ),
             ),
           ],
         ),
-      ),
+      ],
     );
   }
 
-  Widget _statRow(String label, int v, Color c) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 8,
-            height: 8,
-            decoration: BoxDecoration(color: c, shape: BoxShape.circle),
-          ),
-          const SizedBox(width: 8),
-          Text(label, style: const TextStyle(fontSize: 14)),
-          const SizedBox(width: 10),
-          Text('$v',
-              style: TextStyle(
-                  fontSize: 16, fontWeight: FontWeight.w800, color: c)),
-        ],
-      ),
+  Widget _statCell({required String label, required String value, required Color color}) {
+    return Column(
+      children: [
+        Text(value,
+            style: TextStyle(
+                fontSize: 22, fontWeight: FontWeight.w900, color: color)),
+        const SizedBox(height: 2),
+        Text(label,
+            style: const TextStyle(fontSize: 11, color: textMuted)),
+      ],
     );
   }
 
   Widget _card() {
-    final w = _queue[_i];
+    final w = _queue.first;
     final srs = Store.instance.getSrs(w.w);
     final hanjas = <(String, String, String)>[];
     for (final ch in w.w.split('')) {
@@ -311,9 +479,9 @@ class _StudyModalState extends State<StudyModal>
                                         height: 1.5,
                                       ),
                                     )
-                                  : const Text(
-                                      '카드를 탭해서 뜻 보기',
-                                      key: ValueKey('hint'),
+                                  : Text(
+                                      t('sm.tap_to_reveal'),
+                                      key: const ValueKey('hint'),
                                       style: TextStyle(
                                         fontSize: 13,
                                         color: textMuted,
@@ -385,7 +553,7 @@ class _StudyModalState extends State<StudyModal>
                     if (!_revealed) setState(() => _revealed = true);
                     _act(SrsAction.again);
                   },
-                  child: const Text('또 보기'),
+                  child: Text(t('sm.again')),
                 ),
               ),
               const SizedBox(width: 8),
@@ -398,7 +566,7 @@ class _StudyModalState extends State<StudyModal>
                     if (!_revealed) setState(() => _revealed = true);
                     _act(SrsAction.easy);
                   },
-                  child: const Text('쉬워요'),
+                  child: Text(t('sm.easy')),
                 ),
               ),
             ],

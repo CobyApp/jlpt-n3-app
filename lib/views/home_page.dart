@@ -220,6 +220,12 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
               ),
               const SizedBox(width: 6),
               _iconChip(
+                icon: Icons.menu_book_rounded,
+                color: brandPrimary,
+                onTap: () => context.push('/study'),
+              ),
+              const SizedBox(width: 4),
+              _iconChip(
                 icon: Icons.star_rounded,
                 color: gold,
                 badge: wbCount > 0 ? '$wbCount' : null,
@@ -227,9 +233,9 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
               ),
               const SizedBox(width: 4),
               _iconChip(
-                icon: Icons.refresh_rounded,
+                icon: Icons.settings_rounded,
                 color: textMuted,
-                onTap: _confirmReset,
+                onTap: () => context.push('/settings'),
               ),
             ],
           ),

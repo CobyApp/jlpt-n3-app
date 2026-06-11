@@ -195,6 +195,11 @@
     "Comprehension (Short passages)": 64,
     "Comprehension (Mid-size passages)": 96,
     "Comprehension (Long passages)": 64,
-    "Information Retrieval": 30
+    "Information Retrieval": 30,
+    "task-based-comprehension": 96,
+    "comprehension-of-key-points": 96,
+    "comprehension-general-outline": 48,
+    "verbal-expressions": 64,
+    "quick-response": 144
   }
 }
