@@ -87,30 +87,35 @@ class JapaneseText extends StatelessWidget {
       if (s.entry == null) {
         spans.add(TextSpan(text: s.text, style: style));
       } else {
-        spans.add(_wordSpan(s.entry!, style, inTarget: inTarget));
+        spans.add(_wordSpan(s.text, s.entry!, style, inTarget: inTarget));
       }
     }
     return spans;
   }
 
-  InlineSpan _wordSpan(VocabEntry e, TextStyle style,
+  /// [surface] 는 화면에 표시할 실제 텍스트(활용형일 수 있음),
+  /// [e] 는 탭 시 보여줄 사전 기본형 entry.
+  InlineSpan _wordSpan(String surface, VocabEntry e, TextStyle style,
       {required bool inTarget}) {
     final tap = TapGestureRecognizer()
       ..onTap = () {
         if (onWordTap != null) onWordTap!(e);
       };
 
-    // 출제 어휘(stem_u) 구간 안의 vocab 매치 — target 스타일을 유지하되 탭만 받음.
-    // 색/굵기/밑줄을 덮어쓰지 않아 출제 어휘의 시각적 강조가 깨지지 않는다.
+    // 후리가나는 표면형이 기본형과 같을 때만 (활용형이면 읽기가 어긋나므로 생략).
+    final showRuby =
+        furigana && e.r.isNotEmpty && e.r != e.w && surface == e.w;
+
+    // 출제 어휘(stem_u) 구간 안의 vocab 매치 — target 스타일 유지, 탭만 받음.
     if (inTarget) {
-      if (!furigana || e.r.isEmpty || e.r == e.w) {
-        return TextSpan(text: e.w, style: style, recognizer: tap);
+      if (!showRuby) {
+        return TextSpan(text: surface, style: style, recognizer: tap);
       }
       return TextSpan(
         style: style,
         recognizer: tap,
         children: [
-          TextSpan(text: e.w),
+          TextSpan(text: surface),
           TextSpan(
             text: '(${e.r})',
             style: style.copyWith(
@@ -133,14 +138,14 @@ class JapaneseText extends StatelessWidget {
       decorationThickness: 1.2,
     );
 
-    if (!furigana || e.r.isEmpty || e.r == e.w) {
-      return TextSpan(text: e.w, style: wordStyle, recognizer: tap);
+    if (!showRuby) {
+      return TextSpan(text: surface, style: wordStyle, recognizer: tap);
     }
     return TextSpan(
       style: wordStyle,
       recognizer: tap,
       children: [
-        TextSpan(text: e.w),
+        TextSpan(text: surface),
         TextSpan(
           text: '(${e.r})',
           style: style.copyWith(
